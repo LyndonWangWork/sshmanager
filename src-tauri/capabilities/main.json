@@ -1,0 +1,13 @@
+{
+  "identifier": "main-capability",
+  "description": "Main application capability with dialog permissions",
+  "windows": ["main"],
+  "permissions": [
+    "dialog:allow-save",
+    "dialog:allow-open",
+    "dialog:allow-message",
+    "dialog:allow-ask",
+    "dialog:allow-confirm",
+    "dialog:default"
+  ]
+}

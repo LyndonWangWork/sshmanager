@@ -214,7 +214,118 @@ pub async fn import_keys(
     Ok(imported_keys)
 }
 
-// 导出所有密钥
+// 导出密钥到指定文件（增强版本）
+#[tauri::command]
+pub async fn export_keys_to_file(
+    key_ids: Vec<String>,
+    file_path: String,
+    export_format: String,
+    include_private_keys: bool,
+    crypto_state: CryptoState<'_>,
+    storage_state: StorageState<'_>,
+) -> Result<bool, String> {
+    let data = load_and_decrypt_data(&crypto_state, &storage_state).await?;
+    
+    // 获取所有密钥
+    let all_keys: Vec<SshKeyPair> = data["keys"]
+        .as_array()
+        .ok_or("无效的数据格式")?
+        .iter()
+        .map(|v| serde_json::from_value(v.clone()))
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| e.to_string())?;
+    
+    // 筛选要导出的密钥
+    let keys_to_export: Vec<SshKeyPair> = if key_ids.is_empty() {
+        // 如果没有指定密钥ID，导出所有密钥
+        all_keys
+    } else {
+        // 根据ID筛选密钥
+        all_keys.into_iter()
+            .filter(|key| key_ids.contains(&key.id))
+            .collect()
+    };
+    
+    if keys_to_export.is_empty() {
+        return Err("没有找到要导出的密钥".to_string());
+    }
+    
+    // 根据格式导出
+    match export_format.as_str() {
+        "json" => {
+            let export_data = serde_json::json!({
+                "version": "1.0",
+                "exported_at": chrono::Utc::now(),
+                "keys": keys_to_export.iter().map(|key| {
+                    let mut key_data = serde_json::to_value(key).unwrap();
+                    if !include_private_keys {
+                        key_data["private_key"] = serde_json::Value::String("[REDACTED]".to_string());
+                    }
+                    key_data
+                }).collect::<Vec<_>>()
+            });
+            
+            let json_content = serde_json::to_string_pretty(&export_data)
+                .map_err(|e| format!("序列化失败: {}", e))?;
+            
+            std::fs::write(&file_path, json_content)
+                .map_err(|e| format!("写入文件失败: {}", e))?;
+        },
+        "openssh" => {
+            // 导出为OpenSSH格式（每个密钥一个文件）
+            for (index, key) in keys_to_export.iter().enumerate() {
+                let base_path = if keys_to_export.len() == 1 {
+                    file_path.clone()
+                } else {
+                    format!("{}_key_{}", file_path, index + 1)
+                };
+                
+                // 写入公钥文件
+                let pub_path = format!("{}.pub", base_path);
+                std::fs::write(&pub_path, &key.public_key)
+                    .map_err(|e| format!("写入公钥文件失败: {}", e))?;
+                
+                // 如果包含私钥，写入私钥文件
+                if include_private_keys {
+                    std::fs::write(&base_path, &key.private_key)
+                        .map_err(|e| format!("写入私钥文件失败: {}", e))?;
+                }
+            }
+        },
+        "pem" => {
+            // 导出为PEM格式
+            let mut pem_content = String::new();
+            for key in &keys_to_export {
+                pem_content.push_str(&format!("# SSH Key: {}\n", key.name));
+                pem_content.push_str(&format!("# Type: {}\n", key.key_type));
+                pem_content.push_str(&format!("# Size: {} bits\n", key.key_size));
+                pem_content.push_str(&format!("# Fingerprint: {}\n", key.fingerprint));
+                pem_content.push_str(&format!("# Created: {}\n", key.created_at.format("%Y-%m-%d %H:%M:%S UTC")));
+                if !key.comment.is_empty() {
+                    pem_content.push_str(&format!("# Comment: {}\n", key.comment));
+                }
+                pem_content.push_str("#\n");
+                pem_content.push_str(&format!("# Public Key:\n{}\n\n", key.public_key));
+                
+                if include_private_keys {
+                    pem_content.push_str(&format!("# Private Key:\n{}\n\n", key.private_key));
+                } else {
+                    pem_content.push_str("# Private Key: [REDACTED for security]\n\n");
+                }
+                
+                pem_content.push_str(&format!("# {}\n\n", "-".repeat(50)));
+            }
+            
+            std::fs::write(&file_path, pem_content)
+                .map_err(|e| format!("写入文件失败: {}", e))?;
+        },
+        _ => {
+            return Err(format!("不支持的导出格式: {}", export_format));
+        }
+    }
+    
+    Ok(true)
+}
 #[tauri::command]
 pub async fn export_all_keys(
     crypto_state: CryptoState<'_>,
@@ -270,4 +381,70 @@ async fn save_encrypted_data(
     let salt = CryptoService::generate_salt(); // 在实际实现中应使用现有盐值
     
     storage.save_encrypted_data(&encrypted, &salt).map_err(|e| e.to_string())
+}
+
+// 字符串格式化测试
+#[cfg(test)]
+mod string_formatting_tests {
+    
+    #[test]
+    fn test_string_concatenation() {
+        // 测试正确的字符串拼接方法
+        let separator = "-".repeat(50);
+        
+        // 方法1: 使用format!宏
+        let result1 = format!("# {}\n\n", separator);
+        assert!(result1.starts_with("# "));
+        assert!(result1.ends_with("\n\n"));
+        assert!(result1.contains("---"));
+        
+        // 方法2: 使用push_str
+        let mut content = String::new();
+        content.push_str("# ");
+        content.push_str(&separator);
+        content.push_str("\n\n");
+        
+        assert_eq!(result1, content);
+        
+        // 验证分隔符长度
+        assert_eq!(separator.len(), 50);
+    }
+    
+    #[test]
+    fn test_pem_content_formatting() {
+        // 模拟PEM内容格式化
+        let mut pem_content = String::new();
+        
+        // 添加密钥信息
+        pem_content.push_str("# SSH Key: test-key\n");
+        pem_content.push_str("# Type: Ed25519\n");
+        pem_content.push_str("#\n");
+        pem_content.push_str("# Public Key:\nssh-ed25519 AAAAC3...\n\n");
+        pem_content.push_str("# Private Key: [REDACTED for security]\n\n");
+        
+        // 添加分隔符 - 使用正确的方法
+        pem_content.push_str(&format!("# {}\n\n", "-".repeat(50)));
+        
+        // 验证内容
+        assert!(pem_content.contains("# SSH Key: test-key"));
+        assert!(pem_content.contains("# Type: Ed25519"));
+        assert!(pem_content.contains("[REDACTED for security]"));
+        assert!(pem_content.contains(&"-".repeat(50)));
+        
+        // 验证格式正确
+        let lines: Vec<&str> = pem_content.lines().collect();
+        assert!(lines.iter().any(|line| line.starts_with("# SSH Key:")));
+        assert!(lines.iter().any(|line| line.starts_with("# Type:")));
+    }
+}
+
+// 简单的文件写入命令（用于前端直接保存文件）
+#[tauri::command]
+pub async fn write_file_content(
+    file_path: String,
+    content: String,
+) -> Result<bool, String> {
+    std::fs::write(&file_path, content)
+        .map(|_| true)
+        .map_err(|e| format!("文件写入失败: {}", e))
 }

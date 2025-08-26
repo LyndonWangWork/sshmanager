@@ -16,6 +16,7 @@ use std::sync::Mutex;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(Mutex::new(CryptoService::new()))
         .manage(Mutex::new(StorageService::new().expect("存储服务初始化失败")))
         .invoke_handler(tauri::generate_handler![
@@ -26,6 +27,8 @@ pub fn run() {
             get_all_keys,
             delete_key,
             export_key,
+            export_keys_to_file,
+            write_file_content,
             import_keys,
             export_all_keys,
         ])

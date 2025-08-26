@@ -19,6 +19,10 @@
               <ArrowUpTrayIcon class="h-4 w-4 mr-2" />
               导入密钥
             </BaseButton>
+            <BaseButton variant="secondary" @click="showExportDialog = true" :disabled="keyStore.keys.length === 0">
+              <ArrowDownTrayIcon class="h-4 w-4 mr-2" />
+              导出密钥
+            </BaseButton>
           </div>
         </div>
       </div>
@@ -206,6 +210,7 @@ import {
   KeyIcon,
   PlusIcon,
   ArrowUpTrayIcon,
+  ArrowDownTrayIcon,
   ArrowLeftIcon,
   MagnifyingGlassIcon,
   ShieldCheckIcon,
@@ -318,8 +323,16 @@ const closeEditDialog = () => {
 // 处理密钥导出
 const handleExportKey = async (keyId: string) => {
   try {
-    await keyStore.exportKey(keyId)
-    // TODO: 显示成功提示
+    // 找到要导出的密钥
+    const keyToExport = keyStore.keys.find(key => key.id === keyId)
+    if (!keyToExport) {
+      console.error('未找到要导出的密钥')
+      return
+    }
+    
+    // 设置选中的密钥并打开导出对话框
+    selectedKeys.value = [keyToExport]
+    showExportDialog.value = true
   } catch (error) {
     console.error('导出密钥失败:', error)
     // TODO: 显示错误提示

@@ -116,6 +116,9 @@
               <option value="openssh">OpenSSH 格式</option>
               <option value="pem">PEM 格式</option>
             </select>
+            <p class="mt-1 text-xs text-gray-500">
+              JSON格式：适合应用备份和恢复 | OpenSSH/PEM格式：适合系统使用
+            </p>
           </div>
           
           <!-- 安全选项 -->
@@ -171,6 +174,8 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { invoke } from '@tauri-apps/api/core'
+import { save } from '@tauri-apps/plugin-dialog'
 import { useKeyStore } from '@/stores/key'
 import type { SshKeyPair } from '@/types'
 import BaseButton from '@/components/BaseButton.vue'
@@ -240,6 +245,39 @@ const exportPreview = computed(() => {
       }))
     }
     return JSON.stringify(data, null, 2).substring(0, 500) + '...'
+  } else if (exportFormat.value === 'openssh') {
+    let preview = ''
+    keysToExport.slice(0, 2).forEach((key, index) => {
+      if (index > 0) preview += '\n\n'
+      preview += `# 密钥: ${key.name}\n`
+      preview += `# 类型: ${key.key_type}\n`
+      preview += `# 公钥文件 (${key.name}.pub):\n`
+      preview += key.public_key.substring(0, 50) + '...'  
+      if (includePrivateKeys.value) {
+        preview += `\n\n# 私钥文件 (${key.name}):\n`
+        preview += key.private_key.substring(0, 50) + '...'
+      }
+    })
+    if (keysToExport.length > 2) {
+      preview += `\n\n... 还有 ${keysToExport.length - 2} 个密钥`
+    }
+    return preview
+  } else if (exportFormat.value === 'pem') {
+    let preview = ''
+    keysToExport.slice(0, 2).forEach((key, index) => {
+      if (index > 0) preview += '\n\n'
+      preview += `# Key: ${key.name}\n`
+      preview += `# Type: ${key.key_type}\n`
+      preview += `# Fingerprint: ${key.fingerprint}\n`
+      preview += `# Public Key:\n${key.public_key.substring(0, 50)}...\n`
+      if (includePrivateKeys.value) {
+        preview += `# Private Key:\n${key.private_key.substring(0, 50)}...\n`
+      }
+    })
+    if (keysToExport.length > 2) {
+      preview += `\n... 还有 ${keysToExport.length - 2} 个密钥`
+    }
+    return preview
   }
   
   return `将导出 ${keysToExport.length} 个密钥`
@@ -525,32 +563,72 @@ const handleExport = async () => {
   isLoading.value = true
   
   try {
-    let exportData: string
+    // 准备导出的密钥ID列表
+    const keyIds = exportScope.value === 'all' ? [] : props.selectedKeys.map(key => key.id)
     
-    if (exportScope.value === 'all') {
-      exportData = await keyStore.exportAllKeys()
-    } else {
-      // 导出选中的密钥
-      const data = {
-        version: '1.0',
-        exported_at: new Date().toISOString(),
-        keys: props.selectedKeys
+    // 根据导出格式确定文件扩展名和默认文件名
+    const getFileExtension = (format: string) => {
+      switch (format) {
+        case 'json': return 'json'
+        case 'openssh': return 'txt'
+        case 'pem': return 'pem'
+        default: return 'txt'
       }
-      exportData = JSON.stringify(data, null, 2)
     }
     
-    // 下载文件
-    const blob = new Blob([exportData], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `ssh_keys_${new Date().toISOString().split('T')[0]}.json`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    const extension = getFileExtension(exportFormat.value)
+    const defaultFileName = `ssh_keys_${new Date().toISOString().split('T')[0]}.${extension}`
     
-    emit('success', '密钥导出成功')
+    // 使用 Tauri 文件保存对话框
+    const filePath = await save({
+      defaultPath: defaultFileName,
+      filters: [{
+        name: `${exportFormat.value.toUpperCase()} 文件`,
+        extensions: [extension]
+      }]
+    })
+    
+    // 用户取消了保存
+    if (!filePath) {
+      isLoading.value = false
+      return
+    }
+    
+    // 对于所有格式，使用后端API处理
+    if (exportFormat.value === 'json') {
+      // JSON格式：在前端生成数据，然后写入文件
+      let exportData: string
+      
+      if (exportScope.value === 'all') {
+        exportData = await keyStore.exportAllKeys()
+      } else {
+        const data = {
+          version: '1.0',
+          exported_at: new Date().toISOString(),
+          keys: props.selectedKeys.map(key => ({
+            ...key,
+            private_key: includePrivateKeys.value ? key.private_key : '[REDACTED]'
+          }))
+        }
+        exportData = JSON.stringify(data, null, 2)
+      }
+      
+      // 使用写文件命令保存到用户选择的位置
+      await invoke<boolean>('write_file_content', {
+        filePath,
+        content: exportData
+      })
+    } else {
+      // 对于其他格式，直接调用后端API
+      await invoke<boolean>('export_keys_to_file', {
+        keyIds,
+        filePath,
+        exportFormat: exportFormat.value,
+        includePrivateKeys: includePrivateKeys.value
+      })
+    }
+    
+    emit('success', `密钥已成功导出到: ${filePath}`)
     emit('close')
   } catch (error) {
     emit('error', `导出失败: ${error}`)
@@ -558,4 +636,23 @@ const handleExport = async () => {
     isLoading.value = false
   }
 }
+// 监听显示状态变化，重置表单
+watch(() => props.show, (newShow, oldShow) => {
+  if (newShow && !oldShow) {
+    // 对话框打开时重置状态
+    if (props.mode === 'import') {
+      importMethod.value = 'file'
+      importText.value = ''
+      previewKeys.value = []
+      if (fileInput.value) {
+        fileInput.value.value = ''
+      }
+    } else {
+      exportScope.value = 'all'
+      exportFormat.value = 'json'
+      includePrivateKeys.value = false
+    }
+    isLoading.value = false
+  }
+})
 </script>
