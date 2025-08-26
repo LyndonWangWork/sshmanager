@@ -17,7 +17,9 @@ const zh = {
     success: '成功',
     error: '错误',
     warning: '警告',
-    info: '信息'
+    info: '信息',
+    file: '文件',
+    line: '行'
   },
   nav: {
     dashboard: '仪表板',
@@ -112,6 +114,7 @@ const zh = {
     title: '密钥管理',
     generateNew: '生成新密钥',
     importKeys: '导入密钥',
+    exportKeys: '导出密钥',
     stats: {
       totalKeys: '总密钥数',
       rsaKeys: 'RSA 密钥',
@@ -127,12 +130,39 @@ const zh = {
         lastUsed: '按使用时间'
       }
     },
+    actions: {
+      edit: '编辑',
+      delete: '删除',
+      export: '导出',
+      copy: '复制',
+      viewDetails: '查看详情'
+    },
     empty: {
       noKeys: '没有找到密钥',
       noKeysCreated: '还没有创建任何SSH密钥',
       noMatching: '没有匹配搜索条件的密钥',
       generateFirst: '生成第一个密钥'
     }
+  },
+  keyCard: {
+    actions: {
+      copyPublicKey: '复制公钥',
+      exportKey: '导出密钥',
+      editInfo: '编辑信息',
+      deleteKey: '删除密钥',
+      copyFingerprint: '复制指纹'
+    },
+    labels: {
+      fingerprint: '指纹',
+      comment: '注释',
+      noComment: '无注释',
+      createdTime: '创建时间',
+      lastUsed: '最后使用',
+      publicKeyContent: '公钥内容',
+      showPublicKey: '显示公钥',
+      hidePublicKey: '收起公钥'
+    },
+    confirmDelete: '确定要删除密钥 "{name}" 吗？此操作无法撤销。'
   },
   configEditor: {
     title: 'SSH配置编辑',
@@ -154,9 +184,103 @@ const zh = {
       identityFile: '身份文件 (私钥)',
       selectKey: '选择密钥',
       browse: '浏览',
-      addOption: '添加选项'
+      addOption: '添加选项',
+      newHost: '新主机',
+      deleteConfirm: '确定要删除这个主机配置吗？',
+      noHostsMessage: '暂无主机配置',
+      otherOptions: '其他选项',
+      optionName: '选项名',
+      optionValue: '选项值',
+      deleteOption: '删除选项',
+      selectHostMessage: '请选择一个主机进行配置'
+    },
+    preview: {
+      title: '配置预览',
+      showEditor: '显示编辑器',
+      hideEditor: '隐藏编辑器',
+      rawPlaceholder: '# SSH 配置文件\n# 请直接编辑原始配置',
+      applyChanges: '应用更改'
+    },
+    messages: {
+      loadError: '加载配置失败:',
+      saveError: '保存配置失败:',
+      copySuccess: '配置已复制到剪贴板',
+      copyError: '复制失败:',
+      featureNotImplemented: '功能待实现'
     },
     empty: '请选择一个主机配置或添加新的主机'
+  },
+  importExport: {
+    dialog: {
+      importTitle: '导入密钥',
+      exportTitle: '导出密钥',
+      cancel: '取消',
+      importing: '导入中...',
+      exporting: '导出中...',
+      importAction: '导入密钥',
+      exportAction: '导出密钥'
+    },
+    import: {
+      method: {
+        title: '导入方式',
+        file: '从文件导入',
+        text: '从文本导入'
+      },
+      file: {
+        label: '选择密钥文件',
+        placeholder: '请选择密钥文件'
+      },
+      text: {
+        label: '粘贴密钥数据',
+        placeholder: '请粘贴导出的密钥数据 (JSON格式)'
+      },
+      preview: {
+        title: '即将导入的密钥',
+        count: '个'
+      }
+    },
+    export: {
+      scope: {
+        title: '导出范围',
+        all: '导出所有密钥',
+        selected: '导出选中的密钥'
+      },
+      format: {
+        title: '导出格式',
+        json: 'JSON 格式 (.json)',
+        openssh: 'OpenSSH 格式',
+        pem: 'PEM 格式',
+        description: 'JSON格式：适合应用备份和恢复 | OpenSSH/PEM格式：适合系统使用'
+      },
+      security: {
+        includePrivate: '包含私钥 (不推荐，仅在安全环境中使用)'
+      },
+      preview: {
+        title: '导出预览',
+        willExport: '将导出',
+        keys: '个密钥',
+        keyName: '密钥:',
+        keyType: '类型:',
+        publicKeyFile: '公钥文件',
+        privateKeyFile: '私钥文件',
+        moreKeys: '还有',
+        fingerprint: '指纹:'
+      }
+    },
+    messages: {
+      noValidKeys: '文件中没有找到有效的密钥数据',
+      parseError: '文件解析失败：',
+      unknownError: '未知错误',
+      fileReadError: '文件读取失败',
+      invalidFormat: '无效的JSON文件格式。支持的格式：标准导出文件、密钥数组或单个密钥对象',
+      importSuccess: '成功导入',
+      exportSuccess: '密钥已成功导出到:',
+      importError: '导入失败:',
+      exportError: '导出失败:',
+      noImportData: '没有可导入的数据',
+      parseWarning: '解析成功，但有',
+      invalidKeysIgnored: '个无效密钥被忽略'
+    }
   },
   settings: {
     title: '设置',
@@ -222,7 +346,9 @@ const en = {
     success: 'Success',
     error: 'Error',
     warning: 'Warning',
-    info: 'Info'
+    info: 'Info',
+    file: 'File',
+    line: 'line'
   },
   nav: {
     dashboard: 'Dashboard',
@@ -317,6 +443,7 @@ const en = {
     title: 'Key Management',
     generateNew: 'Generate New Key',
     importKeys: 'Import Keys',
+    exportKeys: 'Export Keys',
     stats: {
       totalKeys: 'Total Keys',
       rsaKeys: 'RSA Keys',
@@ -332,12 +459,39 @@ const en = {
         lastUsed: 'By Last Used'
       }
     },
+    actions: {
+      edit: 'Edit',
+      delete: 'Delete',
+      export: 'Export',
+      copy: 'Copy',
+      viewDetails: 'View Details'
+    },
     empty: {
       noKeys: 'No keys found',
       noKeysCreated: 'No SSH keys have been created yet',
       noMatching: 'No keys match the search criteria',
       generateFirst: 'Generate First Key'
     }
+  },
+  keyCard: {
+    actions: {
+      copyPublicKey: 'Copy Public Key',
+      exportKey: 'Export Key',
+      editInfo: 'Edit Info',
+      deleteKey: 'Delete Key',
+      copyFingerprint: 'Copy Fingerprint'
+    },
+    labels: {
+      fingerprint: 'Fingerprint',
+      comment: 'Comment',
+      noComment: 'No Comment',
+      createdTime: 'Created',
+      lastUsed: 'Last Used',
+      publicKeyContent: 'Public Key Content',
+      showPublicKey: 'Show Public Key',
+      hidePublicKey: 'Hide Public Key'
+    },
+    confirmDelete: 'Are you sure you want to delete key "{name}"? This action cannot be undone.'
   },
   configEditor: {
     title: 'SSH Config Editor',
@@ -359,9 +513,103 @@ const en = {
       identityFile: 'Identity File (Private Key)',
       selectKey: 'Select Key',
       browse: 'Browse',
-      addOption: 'Add Option'
+      addOption: 'Add Option',
+      newHost: 'New Host',
+      deleteConfirm: 'Are you sure you want to delete this host configuration?',
+      noHostsMessage: 'No host configurations',
+      otherOptions: 'Other Options',
+      optionName: 'Option Name',
+      optionValue: 'Option Value',
+      deleteOption: 'Delete Option',
+      selectHostMessage: 'Please select a host to configure'
+    },
+    preview: {
+      title: 'Configuration Preview',
+      showEditor: 'Show Editor',
+      hideEditor: 'Hide Editor',
+      rawPlaceholder: '# SSH Configuration File\n# Please edit the raw configuration directly',
+      applyChanges: 'Apply Changes'
+    },
+    messages: {
+      loadError: 'Failed to load configuration:',
+      saveError: 'Failed to save configuration:',
+      copySuccess: 'Configuration copied to clipboard',
+      copyError: 'Copy failed:',
+      featureNotImplemented: 'Feature not implemented yet'
     },
     empty: 'Please select a host configuration or add a new host'
+  },
+  importExport: {
+    dialog: {
+      importTitle: 'Import Keys',
+      exportTitle: 'Export Keys',
+      cancel: 'Cancel',
+      importing: 'Importing...',
+      exporting: 'Exporting...',
+      importAction: 'Import Keys',
+      exportAction: 'Export Keys'
+    },
+    import: {
+      method: {
+        title: 'Import Method',
+        file: 'Import from File',
+        text: 'Import from Text'
+      },
+      file: {
+        label: 'Select Key File',
+        placeholder: 'Please select a key file'
+      },
+      text: {
+        label: 'Paste Key Data',
+        placeholder: 'Please paste exported key data (JSON format)'
+      },
+      preview: {
+        title: 'Keys to Import',
+        count: 'keys'
+      }
+    },
+    export: {
+      scope: {
+        title: 'Export Scope',
+        all: 'Export All Keys',
+        selected: 'Export Selected Keys'
+      },
+      format: {
+        title: 'Export Format',
+        json: 'JSON Format (.json)',
+        openssh: 'OpenSSH Format',
+        pem: 'PEM Format',
+        description: 'JSON Format: Suitable for app backup and restore | OpenSSH/PEM Format: Suitable for system use'
+      },
+      security: {
+        includePrivate: 'Include Private Keys (Not recommended, use only in secure environments)'
+      },
+      preview: {
+        title: 'Export Preview',
+        willExport: 'Will export',
+        keys: 'keys',
+        keyName: 'Key:',
+        keyType: 'Type:',
+        publicKeyFile: 'Public Key File',
+        privateKeyFile: 'Private Key File',
+        moreKeys: 'more',
+        fingerprint: 'Fingerprint:'
+      }
+    },
+    messages: {
+      noValidKeys: 'No valid key data found in file',
+      parseError: 'File parsing failed:',
+      unknownError: 'Unknown error',
+      fileReadError: 'File reading failed',
+      invalidFormat: 'Invalid JSON file format. Supported formats: standard export file, key array, or single key object',
+      importSuccess: 'Successfully imported',
+      exportSuccess: 'Keys successfully exported to:',
+      importError: 'Import failed:',
+      exportError: 'Export failed:',
+      noImportData: 'No data to import',
+      parseWarning: 'Parsing successful, but',
+      invalidKeysIgnored: 'invalid keys were ignored'
+    }
   },
   settings: {
     title: 'Settings',

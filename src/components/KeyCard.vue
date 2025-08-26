@@ -44,21 +44,21 @@
                 class="flex items-center w-full px-4 py-3 text-sm text-tech-700 hover:bg-primary-50 hover:text-primary-700 transition-all duration-200 group/item"
               >
                 <ClipboardIcon class="h-4 w-4 mr-3 group-hover/item:text-primary-500 transition-colors" />
-                复制公钥
+                {{ $t('keyCard.actions.copyPublicKey') }}
               </button>
               <button
                 @click="exportKey"
                 class="flex items-center w-full px-4 py-3 text-sm text-tech-700 hover:bg-primary-50 hover:text-primary-700 transition-all duration-200 group/item"
               >
                 <ArrowDownTrayIcon class="h-4 w-4 mr-3 group-hover/item:text-primary-500 transition-colors" />
-                导出密钥
+                {{ $t('keyCard.actions.exportKey') }}
               </button>
               <button
                 @click="editKey"
                 class="flex items-center w-full px-4 py-3 text-sm text-tech-700 hover:bg-primary-50 hover:text-primary-700 transition-all duration-200 group/item"
               >
                 <PencilIcon class="h-4 w-4 mr-3 group-hover/item:text-primary-500 transition-colors" />
-                编辑信息
+                {{ $t('keyCard.actions.editInfo') }}
               </button>
               <hr class="my-2 border-tech-200">
               <button
@@ -66,7 +66,7 @@
                 class="flex items-center w-full px-4 py-3 text-sm text-error-600 hover:bg-error-50 hover:text-error-700 transition-all duration-200 group/item"
               >
                 <TrashIcon class="h-4 w-4 mr-3 group-hover/item:text-error-500 transition-colors" />
-                删除密钥
+                {{ $t('keyCard.actions.deleteKey') }}
               </button>
             </div>
           </div>
@@ -76,7 +76,7 @@
     <!-- 密钥详细信息 -->
     <div class="space-y-4">
       <div>
-        <label class="block text-sm font-medium text-tech-700 mb-2">指纹</label>
+        <label class="block text-sm font-medium text-tech-700 mb-2">{{ $t('keyCard.labels.fingerprint') }}</label>
         <div class="flex items-center space-x-2 p-3 bg-tech-50/50 rounded-xl border border-tech-200/50">
           <code class="text-xs font-mono text-tech-700 flex-1 truncate">
             {{ keyData.fingerprint }}
@@ -84,7 +84,7 @@
           <button
             @click="copyFingerprint"
             class="p-2 hover:bg-white/80 rounded-lg transition-all duration-200 hover:shadow-elevation-1"
-            title="复制指纹"
+            :title="$t('keyCard.actions.copyFingerprint')"
           >
             <ClipboardIcon class="h-4 w-4 text-tech-400 hover:text-primary-500 transition-colors" />
           </button>
@@ -92,27 +92,27 @@
       </div>
       
       <div>
-        <label class="block text-sm font-medium text-tech-700 mb-2">注释</label>
+        <label class="block text-sm font-medium text-tech-700 mb-2">{{ $t('keyCard.labels.comment') }}</label>
         <p class="text-sm text-tech-600 p-3 bg-tech-50/30 rounded-xl border border-tech-200/30">
-          {{ keyData.comment || '无注释' }}
+          {{ keyData.comment || $t('keyCard.labels.noComment') }}
         </p>
       </div>
       
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
         <div class="flex items-center space-x-2 text-tech-500">
           <div class="w-2 h-2 bg-success-400 rounded-full"></div>
-          <span>创建时间: {{ formatDate(keyData.created_at) }}</span>
+          <span>{{ $t('keyCard.labels.createdTime') }}: {{ formatDate(keyData.created_at) }}</span>
         </div>
         <div v-if="keyData.last_used" class="flex items-center space-x-2 text-tech-500">
           <div class="w-2 h-2 bg-primary-400 rounded-full animate-pulse"></div>
-          <span>最后使用: {{ formatDate(keyData.last_used) }}</span>
+          <span>{{ $t('keyCard.labels.lastUsed') }}: {{ formatDate(keyData.last_used) }}</span>
         </div>
       </div>
     </div>
     
     <!-- 公钥预览 -->
     <div v-if="showPublicKey" class="mt-6 pt-6 border-t border-tech-200/50">
-        <label class="block text-sm font-medium text-tech-700 mb-3">公钥内容</label>
+        <label class="block text-sm font-medium text-tech-700 mb-3">{{ $t('keyCard.labels.publicKeyContent') }}</label>
         <div class="relative">
           <textarea
             :value="keyData.public_key"
@@ -123,7 +123,7 @@
           <button
             @click="copyPublicKey"
             class="absolute top-2 right-2 p-2 bg-white/80 hover:bg-white rounded-lg transition-all duration-200 hover:shadow-elevation-1"
-            title="复制公钥"
+            :title="$t('keyCard.actions.copyPublicKey')"
           >
             <ClipboardIcon class="h-4 w-4 text-tech-400 hover:text-primary-500 transition-colors" />
           </button>
@@ -135,7 +135,7 @@
       @click="showPublicKey = !showPublicKey"
       class="mt-4 px-4 py-2 text-sm text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2"
     >
-      <span>{{ showPublicKey ? '收起公钥' : '显示公钥' }}</span>
+      <span>{{ showPublicKey ? $t('keyCard.labels.hidePublicKey') : $t('keyCard.labels.showPublicKey') }}</span>
       <svg 
         class="w-4 h-4 transition-transform duration-200" 
         :class="{ 'rotate-180': showPublicKey }"
@@ -151,6 +151,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { SshKeyPair } from '@/types'
 import {
   KeyIcon,
@@ -176,6 +177,7 @@ const emit = defineEmits<{
   export: [keyId: string]
 }>()
 
+const { t } = useI18n()
 const showMenu = ref(false)
 const showPublicKey = ref(false)
 
@@ -219,7 +221,7 @@ const editKey = () => {
 
 // 删除密钥
 const deleteKey = () => {
-  if (confirm(`确定要删除密钥 "${props.keyData.name}" 吗？此操作无法撤销。`)) {
+  if (confirm(t('keyCard.confirmDelete', { name: props.keyData.name }))) {
     emit('delete', props.keyData.id)
   }
   showMenu.value = false

@@ -2,15 +2,15 @@
   <div class="container mx-auto px-4 py-8">
     <!-- 页面标题和操作按钮 -->
   <div class="mb-8 flex justify-between items-center">
-    <h1 class="text-2xl font-semibold text-gray-900">SSH配置编辑</h1>
+    <h1 class="text-2xl font-semibold text-gray-900">{{ $t('configEditor.title') }}</h1>
     <div class="flex items-center space-x-4">
       <BaseButton variant="secondary" @click="loadConfig" :disabled="isLoading">
         <ArrowPathIcon class="h-4 w-4 mr-2" />
-        重新加载
+        {{ $t('configEditor.reload') }}
       </BaseButton>
       <BaseButton @click="saveConfig" :disabled="!hasChanges || isLoading">
         <DocumentCheckIcon class="h-4 w-4 mr-2" />
-        保存配置
+        {{ $t('configEditor.saveConfig') }}
       </BaseButton>
     </div>
   </div>
@@ -22,10 +22,10 @@
         <!-- 主机列表头部 -->
         <div class="px-6 py-4 border-b border-gray-200">
           <div class="flex items-center justify-between">
-            <h2 class="text-lg font-semibold text-gray-900">主机配置</h2>
+            <h2 class="text-lg font-semibold text-gray-900">{{ $t('configEditor.hostConfig.title') }}</h2>
             <BaseButton size="sm" @click="addNewHost">
               <PlusIcon class="h-4 w-4 mr-1" />
-              添加
+              {{ $t('configEditor.hostConfig.add') }}
             </BaseButton>
           </div>
         </div>
@@ -39,7 +39,7 @@
               <div>
                 <h3 class="text-sm font-medium text-gray-900">{{ host.host_pattern }}</h3>
                 <p class="text-xs text-gray-500 mt-1">
-                  {{ host.hostname || '未设置主机名' }}
+                  {{ host.hostname || $t('configEditor.hostConfig.hostnameHint') }}
                 </p>
               </div>
               <button @click.stop="deleteHost(index)" class="p-1 text-gray-400 hover:text-red-600 transition-colors">
@@ -50,7 +50,7 @@
 
           <div v-if="sshConfig.hosts.length === 0" class="px-6 py-8 text-center text-gray-500">
             <ServerIcon class="mx-auto h-8 w-8 text-gray-400 mb-2" />
-            <p class="text-sm">暂无主机配置</p>
+            <p class="text-sm">{{ $t('configEditor.hostConfig.noHostsMessage') }}</p>
           </div>
         </div>
       </div>
@@ -60,33 +60,33 @@
     <div class="lg:col-span-1">
       <div class="bg-white rounded-lg shadow-sm p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">
-          {{ selectedHostIndex >= 0 ? '编辑主机配置' : '选择主机进行编辑' }}
+          {{ selectedHostIndex >= 0 ? $t('configEditor.hostConfig.title') : $t('configEditor.empty') }}
         </h3>
 
         <div v-if="selectedHostIndex >= 0" class="space-y-4">
           <!-- Host 模式 -->
-          <BaseInput v-model="selectedHost.host_pattern" label="Host 模式" required placeholder="例如：github.com 或 server-*"
-            hint="支持通配符，如 * 和 ?" />
+          <BaseInput v-model="selectedHost.host_pattern" :label="$t('configEditor.hostConfig.hostPattern')" required :placeholder="$t('configEditor.hostConfig.hostPatternPlaceholder')"
+            :hint="$t('configEditor.hostConfig.hostPatternHint')" />
 
           <!-- 主机名 -->
-          <BaseInput v-model="selectedHost.hostname" label="主机名" placeholder="例如：192.168.1.100 或 server.example.com"
-            hint="实际连接的主机地址" />
+          <BaseInput v-model="selectedHost.hostname" :label="$t('configEditor.hostConfig.hostname')" :placeholder="$t('configEditor.hostConfig.hostnamePlaceholder')"
+            :hint="$t('configEditor.hostConfig.hostnameHint')" />
 
           <!-- 用户名 -->
-          <BaseInput v-model="selectedHost.user" label="用户名" placeholder="例如：root 或 ubuntu" />
+          <BaseInput v-model="selectedHost.user" :label="$t('configEditor.hostConfig.user')" :placeholder="$t('configEditor.hostConfig.userPlaceholder')" />
 
           <!-- 端口 -->
-          <BaseInput v-model="selectedHost.port" label="端口" type="number" placeholder="默认 22" />
+          <BaseInput v-model="selectedHost.port" :label="$t('configEditor.hostConfig.port')" type="number" :placeholder="$t('configEditor.hostConfig.portPlaceholder')" />
 
           <!-- 身份文件 -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
-              身份文件 (私钥)
+              {{ $t('configEditor.hostConfig.identityFile') }}
             </label>
             <div class="flex space-x-2">
               <select v-model="selectedHost.identity_file"
                 class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="">选择密钥</option>
+                <option value="">{{ $t('configEditor.hostConfig.selectKey') }}</option>
                 <option v-for="key in keyStore.keys" :key="key.id" :value="`~/.ssh/${key.name}`">
                   {{ key.name }} ({{ key.key_type.toUpperCase() }})
                 </option>
@@ -100,24 +100,24 @@
           <!-- 其他选项 -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
-              其他选项
+              {{ $t('configEditor.hostConfig.otherOptions') }}
             </label>
             <div class="space-y-2">
               <div v-for="(option, index) in otherOptionsArray" :key="index" class="flex items-center space-x-2">
                 <input v-model="option.key" @input="updateOptionKey(index, ($event.target as HTMLInputElement).value)"
-                  placeholder="选项名"
+                  :placeholder="$t('configEditor.hostConfig.optionName')"
                   class="w-32 min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
                 <input v-model="option.value"
-                  @input="updateOptionValue(index, ($event.target as HTMLInputElement).value)" placeholder="选项值"
+                  @input="updateOptionValue(index, ($event.target as HTMLInputElement).value)" :placeholder="$t('configEditor.hostConfig.optionValue')"
                   class="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
                 <button @click="removeOptionByIndex(index)"
-                  class="flex-shrink-0 p-2 text-gray-400 hover:text-red-600 transition-colors" title="删除选项">
+                  class="flex-shrink-0 p-2 text-gray-400 hover:text-red-600 transition-colors" :title="$t('configEditor.hostConfig.deleteOption')">
                   <TrashIcon class="h-4 w-4" />
                 </button>
               </div>
               <BaseButton size="sm" variant="secondary" @click="addOption">
                 <PlusIcon class="h-4 w-4 mr-1" />
-                添加选项
+                {{ $t('configEditor.hostConfig.addOption') }}
               </BaseButton>
             </div>
           </div>
@@ -125,7 +125,7 @@
 
         <div v-else class="text-center py-8 text-gray-500">
           <Cog6ToothIcon class="mx-auto h-8 w-8 text-gray-400 mb-2" />
-          <p class="text-sm">请选择一个主机进行配置</p>
+          <p class="text-sm">{{ $t('configEditor.hostConfig.selectHostMessage') }}</p>
         </div>
       </div>
     </div>
@@ -135,10 +135,10 @@
       <div class="bg-white rounded-lg shadow-sm">
         <div class="px-6 py-4 border-b border-gray-200">
           <div class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-gray-900">配置预览</h3>
+            <h3 class="text-lg font-semibold text-gray-900">{{ $t('configEditor.preview.title') }}</h3>
             <div class="flex items-center space-x-2">
               <button @click="showRawEditor = !showRawEditor" class="text-sm text-blue-600 hover:text-blue-800">
-                {{ showRawEditor ? '隐藏编辑器' : '显示编辑器' }}
+                {{ showRawEditor ? $t('configEditor.preview.hideEditor') : $t('configEditor.preview.showEditor') }}
               </button>
               <BaseButton size="sm" variant="secondary" @click="copyConfig">
                 <ClipboardIcon class="h-4 w-4" />
@@ -156,11 +156,11 @@
           <div v-else>
             <textarea v-model="rawConfigText"
               class="w-full h-96 text-xs font-mono bg-gray-50 border rounded-lg p-4 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="# SSH 配置文件\n# 请直接编辑原始配置"></textarea>
+              :placeholder="$t('configEditor.preview.rawPlaceholder')"></textarea>
             <div class="mt-2 flex justify-end">
               <BaseButton size="sm" @click="parseRawConfig">
                 <CheckIcon class="h-4 w-4 mr-1" />
-                应用更改
+                {{ $t('configEditor.preview.applyChanges') }}
               </BaseButton>
             </div>
           </div>
@@ -173,6 +173,7 @@
 
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useKeyStore } from '@/stores/key'
 import type { SshConfig, SshHostConfig } from '@/types'
 import BaseButton from '@/components/BaseButton.vue'
@@ -190,6 +191,7 @@ import {
   CheckIcon,
 } from '@heroicons/vue/24/outline'
 
+const { t } = useI18n()
 const keyStore = useKeyStore()
 
 // SSH配置状态
@@ -283,7 +285,7 @@ const selectHost = (index: number) => {
 // 添加新主机
 const addNewHost = () => {
   const newHost: SshHostConfig = {
-    host_pattern: '新主机',
+    host_pattern: t('configEditor.hostConfig.newHost'),
     hostname: '',
     user: '',
     port: 22,
@@ -298,7 +300,7 @@ const addNewHost = () => {
 
 // 删除主机
 const deleteHost = (index: number) => {
-  if (confirm('确定要删除这个主机配置吗？')) {
+  if (confirm(t('configEditor.hostConfig.deleteConfirm'))) {
     sshConfig.hosts.splice(index, 1)
 
     if (selectedHostIndex.value === index) {
@@ -368,7 +370,7 @@ const updateOptionValue = (index: number, newValue: string) => {
 // 浏览身份文件
 const browseIdentityFile = () => {
   // TODO: 实现文件浏览器
-  console.log('文件浏览器功能待实现')
+  console.log(t('configEditor.messages.featureNotImplemented'))
 }
 
 // 加载配置
@@ -394,7 +396,7 @@ const loadConfig = async () => {
     rawConfigText.value = generatedConfig.value
     hasChanges.value = false
   } catch (error) {
-    console.error('加载配置失败:', error)
+    console.error(t('configEditor.messages.loadError'), error)
   } finally {
     isLoading.value = false
   }
@@ -409,7 +411,7 @@ const saveConfig = async () => {
     console.log('保存配置:', sshConfig)
     hasChanges.value = false
   } catch (error) {
-    console.error('保存配置失败:', error)
+    console.error(t('configEditor.messages.saveError'), error)
   } finally {
     isLoading.value = false
   }
@@ -421,14 +423,14 @@ const copyConfig = async () => {
     await navigator.clipboard.writeText(generatedConfig.value)
     // TODO: 显示成功提示
   } catch (error) {
-    console.error('复制失败:', error)
+    console.error(t('configEditor.messages.copyError'), error)
   }
 }
 
 // 解析原始配置
 const parseRawConfig = () => {
   // TODO: 实现原始配置解析
-  console.log('原始配置解析功能待实现')
+  console.log(t('configEditor.messages.featureNotImplemented'))
 }
 
 // 页面初始化

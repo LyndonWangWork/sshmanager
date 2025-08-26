@@ -4,23 +4,23 @@
     <div class="space-y-6">
       <!-- 基本信息 -->
       <div class="bg-white rounded-lg shadow-sm p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">密钥信息</h2>
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('keyGenerator.keyInfo.title') }}</h2>
 
         <form @submit.prevent="generateKey" class="space-y-4">
-          <BaseInput v-model="keyParams.name" label="密钥名称" required placeholder="例如：github-work" :error="errors.name" />
+          <BaseInput v-model="keyParams.name" :label="$t('keyGenerator.keyInfo.name')" required :placeholder="$t('keyGenerator.keyInfo.namePlaceholder')" :error="errors.name" />
 
-          <BaseInput v-model="keyParams.comment" label="注释 (可选)" placeholder="例如：user@hostname" />
+          <BaseInput v-model="keyParams.comment" :label="$t('keyGenerator.keyInfo.comment')" :placeholder="$t('keyGenerator.keyInfo.commentPlaceholder')" />
         </form>
       </div>
 
       <!-- 密钥类型配置 -->
       <div class="bg-white rounded-lg shadow-sm p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">密钥类型</h2>
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('keyGenerator.keyType.title') }}</h2>
 
         <div class="space-y-4">
           <!-- 密钥类型选择 -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-3">选择类型</label>
+            <label class="block text-sm font-medium text-gray-700 mb-3">{{ $t('keyGenerator.keyType.selectType') }}</label>
             <div class="space-y-2">
               <label v-for="type in keyTypes" :key="type.value"
                 class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
@@ -30,7 +30,7 @@
                   <div class="flex items-center space-x-2">
                     <span class="font-medium">{{ type.name }}</span>
                     <span v-if="type.recommended" class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
-                      推荐
+                      {{ $t('keyGenerator.keyType.recommended') }}
                     </span>
                   </div>
                   <p class="text-sm text-gray-600 mt-1">{{ type.description }}</p>
@@ -41,7 +41,7 @@
 
           <!-- 密钥长度 -->
           <div v-if="keyParams.key_type !== 'Ed25519'">
-            <label class="block text-sm font-medium text-gray-700 mb-2">密钥长度 (bits)</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('keyGenerator.keyType.keyLength') }}</label>
             <select v-model="keyParams.key_size"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option v-for="size in availableKeySizes" :key="size" :value="size">
@@ -49,7 +49,7 @@
               </option>
             </select>
             <p class="text-xs text-gray-500 mt-1">
-              更高的位数提供更强的安全性，但会增加计算开销
+              {{ $t('keyGenerator.keyType.lengthHint') }}
             </p>
           </div>
         </div>
@@ -57,21 +57,21 @@
 
       <!-- 高级选项 -->
       <div class="bg-white rounded-lg shadow-sm p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4">高级选项</h2>
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('keyGenerator.advancedOptions.title') }}</h2>
 
         <div class="space-y-4">
           <!-- 密码保护 -->
           <div>
             <label class="flex items-center mb-3">
               <input v-model="advancedOptions.usePassphrase" type="checkbox" class="mr-3" />
-              <span class="text-sm font-medium">使用密码保护私钥（推荐）</span>
+              <span class="text-sm font-medium">{{ $t('keyGenerator.advancedOptions.usePassphrase') }}</span>
             </label>
 
             <div v-if="advancedOptions.usePassphrase" class="ml-6 space-y-3">
-              <BaseInput v-model="keyParams.passphrase" label="密钥密码" type="password" placeholder="请输入一个强密码来保护私钥"
-                :error="errors.passphrase" hint="密码长度建议不少于8位，包含字母、数字和特殊字符" />
+              <BaseInput v-model="keyParams.passphrase" :label="$t('keyGenerator.advancedOptions.passphrase')" type="password" :placeholder="$t('keyGenerator.advancedOptions.passphrasePlaceholder')"
+                :error="errors.passphrase" :hint="$t('keyGenerator.advancedOptions.passphraseHint')" />
 
-              <BaseInput v-model="passphraseConfirm" label="确认密码" type="password" placeholder="请再次输入密码"
+              <BaseInput v-model="passphraseConfirm" :label="$t('keyGenerator.advancedOptions.confirmPassphrase')" type="password" :placeholder="$t('keyGenerator.advancedOptions.confirmPassphrasePlaceholder')"
                 :error="errors.passphraseConfirm" />
 
               <div class="bg-blue-50 border border-blue-200 rounded-md p-3">
@@ -84,9 +84,9 @@
                     </svg>
                   </div>
                   <div class="ml-3">
-                    <h3 class="text-sm font-medium text-blue-800">安全提示</h3>
+                    <h3 class="text-sm font-medium text-blue-800">{{ $t('keyGenerator.advancedOptions.securityTip.title') }}</h3>
                     <div class="mt-2 text-sm text-blue-700">
-                      <p>密码保护可以防止私钥文件被盗用。即使文件被获取，没有密码也无法使用。</p>
+                      <p>{{ $t('keyGenerator.advancedOptions.securityTip.content') }}</p>
                     </div>
                   </div>
                 </div>
@@ -106,11 +106,11 @@
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
             </path>
           </svg>
-          生成中...
+          {{ $t('keyGenerator.generate.generating') }}
         </span>
         <span v-else class="flex items-center">
           <KeyIcon class="h-5 w-5 mr-2" />
-          生成密钥
+          {{ $t('keyGenerator.generate.button') }}
         </span>
       </BaseButton>
     </div>
@@ -119,7 +119,7 @@
     <div class="space-y-6">
       <!-- 进度显示 -->
       <div v-if="isGenerating" class="bg-white rounded-lg shadow-sm p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">生成进度</h3>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('keyGenerator.generate.progress.title') }}</h3>
 
         <div class="space-y-4">
           <div>
@@ -141,31 +141,31 @@
 
       <!-- 生成结果 -->
       <div v-else-if="generatedKey" class="bg-white rounded-lg shadow-sm p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">生成成功</h3>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('keyGenerator.result.title') }}</h3>
 
         <div class="space-y-4">
           <!-- 密钥信息 -->
           <div class="bg-green-50 border border-green-200 rounded-lg p-4">
             <div class="flex items-center mb-2">
               <CheckCircleIcon class="h-5 w-5 text-green-600 mr-2" />
-              <span class="font-medium text-green-800">密钥生成成功</span>
+              <span class="font-medium text-green-800">{{ $t('keyGenerator.result.successMessage') }}</span>
             </div>
             <div class="text-sm text-green-700">
-              <p><strong>名称:</strong> {{ generatedKey.name }}</p>
-              <p><strong>类型:</strong> {{ generatedKey.key_type.toUpperCase() }}</p>
-              <p><strong>长度:</strong> {{ generatedKey.key_size }} bits</p>
+              <p><strong>{{ $t('keyGenerator.result.name') }}:</strong> {{ generatedKey.name }}</p>
+              <p><strong>{{ $t('keyGenerator.result.type') }}:</strong> {{ generatedKey.key_type.toUpperCase() }}</p>
+              <p><strong>{{ $t('keyGenerator.result.length') }}:</strong> {{ generatedKey.key_size }} bits</p>
             </div>
           </div>
 
           <!-- 指纹 -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">密钥指纹</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('keyGenerator.result.fingerprint') }}</label>
             <div class="flex items-center space-x-2">
               <code class="flex-1 text-xs font-mono bg-gray-100 px-3 py-2 rounded border">
                     {{ generatedKey.fingerprint }}
                   </code>
               <button @click="copyFingerprint" class="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-                title="复制指纹">
+                :title="$t('keyGenerator.result.copyFingerprint')">
                 <ClipboardIcon class="h-4 w-4" />
               </button>
             </div>
@@ -173,17 +173,17 @@
 
           <!-- 公钥 -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">公钥</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('keyGenerator.result.publicKey') }}</label>
             <textarea :value="generatedKey.public_key" readonly rows="3"
               class="w-full text-xs font-mono bg-gray-50 border border-gray-300 rounded-md p-3 resize-none"></textarea>
             <div class="flex space-x-2 mt-2">
               <BaseButton size="sm" @click="copyPublicKey">
                 <ClipboardIcon class="h-4 w-4 mr-1" />
-                复制公钥
+                {{ $t('keyGenerator.result.copyPublicKey') }}
               </BaseButton>
               <BaseButton size="sm" variant="secondary" @click="saveToFile">
                 <ArrowDownTrayIcon class="h-4 w-4 mr-1" />
-                保存文件
+                {{ $t('keyGenerator.result.saveFile') }}
               </BaseButton>
             </div>
           </div>
@@ -192,11 +192,11 @@
           <div class="flex space-x-3 pt-4">
             <BaseButton @click="goToKeyManager" class="flex-1">
               <EyeIcon class="h-4 w-4 mr-2" />
-              查看所有密钥
+              {{ $t('keyGenerator.result.viewAllKeys') }}
             </BaseButton>
             <BaseButton variant="secondary" @click="generateAnother" class="flex-1">
               <PlusIcon class="h-4 w-4 mr-2" />
-              再生成一个
+              {{ $t('keyGenerator.result.generateAnother') }}
             </BaseButton>
           </div>
         </div>
@@ -206,8 +206,8 @@
       <div v-else class="bg-white rounded-lg shadow-sm p-6">
         <div class="text-center text-gray-500 py-8">
           <KeyIcon class="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <h3 class="text-lg font-medium text-gray-900 mb-2">准备生成SSH密钥</h3>
-          <p class="text-sm">设置密钥参数后点击“生成密钥”按钮</p>
+          <h3 class="text-lg font-medium text-gray-900 mb-2">{{ $t('keyGenerator.defaultState.title') }}</h3>
+          <p class="text-sm">{{ $t('keyGenerator.defaultState.subtitle') }}</p>
         </div>
       </div>
     </div>
@@ -217,6 +217,7 @@
 <script setup lang="ts">
 import { ref, computed, reactive } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useKeyStore } from '@/stores/key'
 import type { KeyGenerationParams, SshKeyType, SshKeyPair } from '@/types'
 import BaseButton from '@/components/BaseButton.vue'
@@ -232,6 +233,7 @@ import {
 } from '@heroicons/vue/24/outline'
 
 const router = useRouter()
+const { t } = useI18n()
 const keyStore = useKeyStore()
 
 // 密钥生成参数
@@ -267,7 +269,7 @@ const keyTypes = [
   {
     value: 'Ed25519' as SshKeyType,
     name: 'Ed25519',
-    description: '现代的椒圆曲线算法，安全性高、性能优秀',
+    description: '现代的椭圆曲线算法，安全性高、性能优秀',
     recommended: true
   },
   {
@@ -279,7 +281,7 @@ const keyTypes = [
   {
     value: 'Ecdsa' as SshKeyType,
     name: 'ECDSA',
-    description: '椒圆曲线数字签名算法，平衡了安全性和性能',
+    description: '椭圆曲线数字签名算法，平衡了安全性和性能',
     recommended: false
   }
 ]
@@ -325,19 +327,19 @@ const generateKey = async () => {
 
   // 验证表单
   if (!keyParams.name.trim()) {
-    errors.name = '请输入密钥名称'
+    errors.name = t('keyGenerator.errors.nameRequired')
     return
   }
 
   // 验证密码
   if (advancedOptions.usePassphrase) {
     if (!keyParams.passphrase || keyParams.passphrase.length < 8) {
-      errors.passphrase = '密码长度不能少于8位'
+      errors.passphrase = t('keyGenerator.errors.passphraseLength')
       return
     }
 
     if (keyParams.passphrase !== passphraseConfirm.value) {
-      errors.passphraseConfirm = '两次输入的密码不一致'
+      errors.passphraseConfirm = t('keyGenerator.errors.passphraseConfirm')
       return
     }
   } else {
@@ -352,11 +354,11 @@ const generateKey = async () => {
   try {
     // 模拟生成进度
     const progressSteps = [
-      { progress: 20, text: '初始化随机数生成器...' },
-      { progress: 40, text: '生成密钥对...' },
-      { progress: 70, text: '计算密钥指纹...' },
-      { progress: 90, text: '格式化密钥...' },
-      { progress: 100, text: '密钥生成完成' }
+      { progress: 20, text: t('keyGenerator.generate.progress.init') },
+      { progress: 40, text: t('keyGenerator.generate.progress.generate') },
+      { progress: 70, text: t('keyGenerator.generate.progress.fingerprint') },
+      { progress: 90, text: t('keyGenerator.generate.progress.format') },
+      { progress: 100, text: t('keyGenerator.generate.progress.complete') }
     ]
 
     for (const step of progressSteps) {

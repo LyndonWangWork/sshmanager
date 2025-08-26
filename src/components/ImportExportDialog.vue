@@ -5,7 +5,7 @@
       <div class="px-6 py-4 border-b border-gray-200">
         <div class="flex items-center justify-between">
           <h3 class="text-lg font-semibold text-gray-900">
-            {{ mode === 'import' ? '导入密钥' : '导出密钥' }}
+            {{ mode === 'import' ? $t('importExport.dialog.importTitle') : $t('importExport.dialog.exportTitle') }}
           </h3>
           <button
             @click="$emit('close')"
@@ -21,7 +21,7 @@
         <div v-if="mode === 'import'" class="space-y-4">
           <!-- 导入方式选择 -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">导入方式</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.import.method.title') }}</label>
             <div class="space-y-2">
               <label class="flex items-center">
                 <input
@@ -30,7 +30,7 @@
                   value="file"
                   class="mr-3"
                 />
-                <span class="text-sm">从文件导入</span>
+                <span class="text-sm">{{ $t('importExport.import.method.file') }}</span>
               </label>
               <label class="flex items-center">
                 <input
@@ -39,14 +39,14 @@
                   value="text"
                   class="mr-3"
                 />
-                <span class="text-sm">从文本导入</span>
+                <span class="text-sm">{{ $t('importExport.import.method.text') }}</span>
               </label>
             </div>
           </div>
           
           <!-- 文件选择 -->
           <div v-if="importMethod === 'file'">
-            <label class="block text-sm font-medium text-gray-700 mb-2">选择密钥文件</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.import.file.label') }}</label>
             <input
               ref="fileInput"
               type="file"
@@ -58,18 +58,18 @@
           
           <!-- 文本输入 -->
           <div v-if="importMethod === 'text'">
-            <label class="block text-sm font-medium text-gray-700 mb-2">粘贴密钥数据</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.import.text.label') }}</label>
             <textarea
               v-model="importText"
               rows="8"
-              placeholder="请粘贴导出的密钥数据 (JSON格式)"
+              :placeholder="$t('importExport.import.text.placeholder')"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
             ></textarea>
           </div>
           
           <!-- 导入预览 -->
           <div v-if="previewKeys.length > 0" class="bg-gray-50 rounded-lg p-4">
-            <h4 class="text-sm font-medium text-gray-900 mb-2">即将导入的密钥 ({{ previewKeys.length }} 个)</h4>
+            <h4 class="text-sm font-medium text-gray-900 mb-2">{{ $t('importExport.import.preview.title') }} ({{ previewKeys.length }} {{ $t('importExport.import.preview.count') }})</h4>
             <div class="space-y-1">
               <div v-for="key in previewKeys" :key="key.id" class="text-sm text-gray-600">
                 <span class="font-medium">{{ key.name }}</span>
@@ -82,7 +82,7 @@
         <div v-else class="space-y-4">
           <!-- 导出选项 -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">导出范围</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.export.scope.title') }}</label>
             <div class="space-y-2">
               <label class="flex items-center">
                 <input
@@ -91,7 +91,7 @@
                   value="all"
                   class="mr-3"
                 />
-                <span class="text-sm">导出所有密钥 ({{ keyStore.keys.length }} 个)</span>
+                <span class="text-sm">{{ $t('importExport.export.scope.all') }} ({{ keyStore.keys.length }} {{ $t('importExport.import.preview.count') }})</span>
               </label>
               <label class="flex items-center">
                 <input
@@ -100,24 +100,24 @@
                   value="selected"
                   class="mr-3"
                 />
-                <span class="text-sm">导出选中的密钥</span>
+                <span class="text-sm">{{ $t('importExport.export.scope.selected') }}</span>
               </label>
             </div>
           </div>
           
           <!-- 导出格式 -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">导出格式</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.export.format.title') }}</label>
             <select
               v-model="exportFormat"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="json">JSON 格式 (.json)</option>
-              <option value="openssh">OpenSSH 格式</option>
-              <option value="pem">PEM 格式</option>
+              <option value="json">{{ $t('importExport.export.format.json') }}</option>
+              <option value="openssh">{{ $t('importExport.export.format.openssh') }}</option>
+              <option value="pem">{{ $t('importExport.export.format.pem') }}</option>
             </select>
             <p class="mt-1 text-xs text-gray-500">
-              JSON格式：适合应用备份和恢复 | OpenSSH/PEM格式：适合系统使用
+              {{ $t('importExport.export.format.description') }}
             </p>
           </div>
           
@@ -129,13 +129,13 @@
                 type="checkbox"
                 class="mr-3"
               />
-              <span class="text-sm">包含私钥 (不推荐，仅在安全环境中使用)</span>
+              <span class="text-sm">{{ $t('importExport.export.security.includePrivate') }}</span>
             </label>
           </div>
           
           <!-- 导出预览 -->
           <div v-if="exportPreview" class="bg-gray-50 rounded-lg p-4">
-            <h4 class="text-sm font-medium text-gray-900 mb-2">导出预览</h4>
+            <h4 class="text-sm font-medium text-gray-900 mb-2">{{ $t('importExport.export.preview.title') }}</h4>
             <textarea
               :value="exportPreview"
               readonly
@@ -149,23 +149,23 @@
       <!-- 对话框底部 -->
       <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
         <BaseButton variant="secondary" @click="$emit('close')">
-          取消
+          {{ $t('importExport.dialog.cancel') }}
         </BaseButton>
         <BaseButton
           v-if="mode === 'import'"
           @click="handleImport"
           :disabled="!canImport || isLoading"
         >
-          <span v-if="isLoading">导入中...</span>
-          <span v-else>导入密钥</span>
+          <span v-if="isLoading">{{ $t('importExport.dialog.importing') }}</span>
+          <span v-else>{{ $t('importExport.dialog.importAction') }}</span>
         </BaseButton>
         <BaseButton
           v-else
           @click="handleExport"
           :disabled="!canExport || isLoading"
         >
-          <span v-if="isLoading">导出中...</span>
-          <span v-else>导出密钥</span>
+          <span v-if="isLoading">{{ $t('importExport.dialog.exporting') }}</span>
+          <span v-else>{{ $t('importExport.dialog.exportAction') }}</span>
         </BaseButton>
       </div>
     </div>
@@ -176,6 +176,7 @@
 import { ref, computed, watch } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { save } from '@tauri-apps/plugin-dialog'
+import { useI18n } from 'vue-i18n'
 import { useKeyStore } from '@/stores/key'
 import type { SshKeyPair } from '@/types'
 import BaseButton from '@/components/BaseButton.vue'
@@ -197,6 +198,7 @@ const emit = defineEmits<{
   error: [error: string]
 }>()
 
+const { t } = useI18n()
 const keyStore = useKeyStore()
 
 // 导入相关状态
@@ -249,17 +251,17 @@ const exportPreview = computed(() => {
     let preview = ''
     keysToExport.slice(0, 2).forEach((key, index) => {
       if (index > 0) preview += '\n\n'
-      preview += `# 密钥: ${key.name}\n`
-      preview += `# 类型: ${key.key_type}\n`
-      preview += `# 公钥文件 (${key.name}.pub):\n`
+      preview += `# ${t('importExport.export.preview.keyName')} ${key.name}\n`
+      preview += `# ${t('importExport.export.preview.keyType')} ${key.key_type}\n`
+      preview += `# ${t('importExport.export.preview.publicKeyFile')} (${key.name}.pub):\n`
       preview += key.public_key.substring(0, 50) + '...'  
       if (includePrivateKeys.value) {
-        preview += `\n\n# 私钥文件 (${key.name}):\n`
+        preview += `\n\n# ${t('importExport.export.preview.privateKeyFile')} (${key.name}):\n`
         preview += key.private_key.substring(0, 50) + '...'
       }
     })
     if (keysToExport.length > 2) {
-      preview += `\n\n... 还有 ${keysToExport.length - 2} 个密钥`
+      preview += `\n\n... ${t('importExport.export.preview.moreKeys')} ${keysToExport.length - 2} ${t('importExport.export.preview.keys')}`
     }
     return preview
   } else if (exportFormat.value === 'pem') {
@@ -268,19 +270,19 @@ const exportPreview = computed(() => {
       if (index > 0) preview += '\n\n'
       preview += `# Key: ${key.name}\n`
       preview += `# Type: ${key.key_type}\n`
-      preview += `# Fingerprint: ${key.fingerprint}\n`
+      preview += `# ${t('importExport.export.preview.fingerprint')} ${key.fingerprint}\n`
       preview += `# Public Key:\n${key.public_key.substring(0, 50)}...\n`
       if (includePrivateKeys.value) {
         preview += `# Private Key:\n${key.private_key.substring(0, 50)}...\n`
       }
     })
     if (keysToExport.length > 2) {
-      preview += `\n... 还有 ${keysToExport.length - 2} 个密钥`
+      preview += `\n... ${t('importExport.export.preview.moreKeys')} ${keysToExport.length - 2} ${t('importExport.export.preview.keys')}`
     }
     return preview
   }
   
-  return `将导出 ${keysToExport.length} 个密钥`
+  return `${t('importExport.export.preview.willExport')} ${keysToExport.length} ${t('importExport.export.preview.keys')}`
 })
 
 // 文件选择处理
@@ -321,7 +323,7 @@ const handleFileSelect = (event: Event) => {
       )
       
       if (validKeys.length === 0) {
-        emit('error', '文件中没有找到有效的密钥数据')
+        emit('error', t('importExport.messages.noValidKeys'))
         previewKeys.value = []
         return
       }
@@ -330,17 +332,17 @@ const handleFileSelect = (event: Event) => {
       
       // 成功解析后给用户反馈
       if (validKeys.length !== keysArray.length) {
-        emit('error', `解析成功，但有 ${keysArray.length - validKeys.length} 个无效密钥被忽略`)
+        emit('error', `${t('importExport.messages.parseWarning')} ${keysArray.length - validKeys.length} ${t('importExport.messages.invalidKeysIgnored')}`)
       }
     } catch (error) {
-      console.error('文件解析错误:', error)
-      emit('error', `文件解析失败：${error instanceof Error ? error.message : '未知错误'}`)
+      console.error(t('importExport.messages.parseError'), error)
+      emit('error', `${t('importExport.messages.parseError')}${error instanceof Error ? error.message : t('importExport.messages.unknownError')}`)
       previewKeys.value = []
     }
   }
   
   reader.onerror = () => {
-    emit('error', '文件读取失败')
+    emit('error', t('importExport.messages.fileReadError'))
     previewKeys.value = []
   }
   
@@ -395,7 +397,7 @@ const parseJsonFile = (content: string): any[] => {
     // 单个密钥对象格式：{ id, name, ... }
     return [data]
   } else {
-    throw new Error('无效的JSON文件格式。支持的格式：标准导出文件、密钥数组或单个密钥对象')
+    throw new Error(t('importExport.messages.invalidFormat'))
   }
 }
 
@@ -442,7 +444,7 @@ const parsePublicKeyFile = (content: string, fileName: string): any[] => {
         created_at: new Date().toISOString()
       })
     } catch (error) {
-      console.warn(`解析公钥第 ${i + 1} 行失败:`, error)
+      console.warn(`${t('importExport.messages.parseError')}${i + 1} ${t('common.line')}:`, error)
     }
   }
   
@@ -480,7 +482,7 @@ const parsePrivateKeyFile = (content: string, fileName: string): any[] => {
       created_at: new Date().toISOString()
     })
   } catch (error) {
-    console.warn('解析私钥文件失败:', error)
+    console.warn(t('importExport.messages.parseError'), error)
   }
   
   return keys
@@ -543,14 +545,14 @@ const handleImport = async () => {
       const parsed = JSON.parse(importText.value)
       keysData = JSON.stringify(parsed.keys || parsed)
     } else {
-      throw new Error('没有可导入的数据')
+      throw new Error(t('importExport.messages.noImportData'))
     }
     
     const importedKeys = await keyStore.importKeys(keysData)
-    emit('success', `成功导入 ${importedKeys.length} 个密钥`)
+    emit('success', `${t('importExport.messages.importSuccess')} ${importedKeys.length} ${t('importExport.export.preview.keys')}`)
     emit('close')
   } catch (error) {
-    emit('error', `导入失败: ${error}`)
+    emit('error', `${t('importExport.messages.importError')} ${error}`)
   } finally {
     isLoading.value = false
   }
@@ -583,7 +585,7 @@ const handleExport = async () => {
     const filePath = await save({
       defaultPath: defaultFileName,
       filters: [{
-        name: `${exportFormat.value.toUpperCase()} 文件`,
+        name: `${exportFormat.value.toUpperCase()} ${t('common.file')}`,
         extensions: [extension]
       }]
     })
@@ -628,10 +630,10 @@ const handleExport = async () => {
       })
     }
     
-    emit('success', `密钥已成功导出到: ${filePath}`)
+    emit('success', `${t('importExport.messages.exportSuccess')} ${filePath}`)
     emit('close')
   } catch (error) {
-    emit('error', `导出失败: ${error}`)
+    emit('error', `${t('importExport.messages.exportError')} ${error}`)
   } finally {
     isLoading.value = false
   }

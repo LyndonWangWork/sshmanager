@@ -8,7 +8,7 @@
           <KeyIcon class="h-6 w-6 text-blue-600" />
         </div>
         <div class="ml-4">
-          <p class="text-sm font-medium text-gray-500">总密钥数</p>
+          <p class="text-sm font-medium text-gray-500">{{ $t('keyManager.stats.totalKeys') }}</p>
           <p class="text-2xl font-semibold text-gray-900">{{ keyStore.keys.length }}</p>
         </div>
       </div>
@@ -20,7 +20,7 @@
           <ShieldCheckIcon class="h-6 w-6 text-green-600" />
         </div>
         <div class="ml-4">
-          <p class="text-sm font-medium text-gray-500">RSA 密钥</p>
+          <p class="text-sm font-medium text-gray-500">{{ $t('keyManager.stats.rsaKeys') }}</p>
           <p class="text-2xl font-semibold text-gray-900">{{ rsaKeyCount }}</p>
         </div>
       </div>
@@ -32,7 +32,7 @@
           <CpuChipIcon class="h-6 w-6 text-purple-600" />
         </div>
         <div class="ml-4">
-          <p class="text-sm font-medium text-gray-500">Ed25519 密钥</p>
+          <p class="text-sm font-medium text-gray-500">{{ $t('keyManager.stats.ed25519Keys') }}</p>
           <p class="text-2xl font-semibold text-gray-900">{{ ed25519KeyCount }}</p>
         </div>
       </div>
@@ -44,7 +44,7 @@
           <CircleStackIcon class="h-6 w-6 text-orange-600" />
         </div>
         <div class="ml-4">
-          <p class="text-sm font-medium text-gray-500">ECDSA 密钥</p>
+          <p class="text-sm font-medium text-gray-500">{{ $t('keyManager.stats.ecdsaKeys') }}</p>
           <p class="text-2xl font-semibold text-gray-900">{{ ecdsaKeyCount }}</p>
         </div>
       </div>
@@ -53,19 +53,19 @@
 
   <!-- 操作按钮区域 -->
   <div class="mb-8 flex justify-between items-center">
-    <h1 class="text-2xl font-semibold text-gray-900">密钥管理</h1>
+    <h1 class="text-2xl font-semibold text-gray-900">{{ $t('keyManager.title') }}</h1>
     <div class="flex items-center space-x-4">
       <BaseButton @click="$router.push({ name: 'KeyGenerator' })">
         <PlusIcon class="h-4 w-4 mr-2" />
-        生成新密钥
+        {{ $t('keyManager.generateNew') }}
       </BaseButton>
       <BaseButton variant="secondary" @click="showImportDialog = true">
         <ArrowUpTrayIcon class="h-4 w-4 mr-2" />
-        导入密钥
+        {{ $t('keyManager.importKeys') }}
       </BaseButton>
       <BaseButton variant="secondary" @click="showExportDialog = true" :disabled="keyStore.keys.length === 0">
         <ArrowDownTrayIcon class="h-4 w-4 mr-2" />
-        导出密钥
+        {{ $t('keyManager.exportKeys') }}
       </BaseButton>
     </div>
   </div>
@@ -79,7 +79,7 @@
             <input
               v-model="searchQuery"
               type="text"
-              placeholder="搜索密钥名称或注释..."
+              :placeholder="$t('keyManager.search.placeholder')"
               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -90,7 +90,7 @@
               v-model="selectedKeyType"
               class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">所有类型</option>
+              <option value="">{{ $t('keyManager.search.allTypes') }}</option>
               <option value="rsa">RSA</option>
               <option value="ed25519">Ed25519</option>
               <option value="ecdsa">ECDSA</option>
@@ -100,9 +100,9 @@
               v-model="sortBy"
               class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="created_at">按创建时间</option>
-              <option value="name">按名称</option>
-              <option value="last_used">按使用时间</option>
+              <option value="created_at">{{ $t('keyManager.search.sortBy.createdAt') }}</option>
+              <option value="name">{{ $t('keyManager.search.sortBy.name') }}</option>
+              <option value="last_used">{{ $t('keyManager.search.sortBy.lastUsed') }}</option>
             </select>
           </div>
         </div>
@@ -115,14 +115,14 @@
       
       <div v-else-if="filteredKeys.length === 0" class="text-center py-12">
         <KeyIcon class="mx-auto h-12 w-12 text-gray-400" />
-        <h3 class="mt-2 text-sm font-medium text-gray-900">没有找到密钥</h3>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">{{ $t('keyManager.empty.noKeys') }}</h3>
         <p class="mt-1 text-sm text-gray-500">
-          {{ keyStore.keys.length === 0 ? '还没有创建任何SSH密钥' : '没有匹配搜索条件的密钥' }}
+          {{ keyStore.keys.length === 0 ? $t('keyManager.empty.noKeysCreated') : $t('keyManager.empty.noMatching') }}
         </p>
         <div class="mt-6">
           <BaseButton @click="$router.push({ name: 'KeyGenerator' })">
             <PlusIcon class="h-4 w-4 mr-2" />
-            生成第一个密钥
+            {{ $t('keyManager.empty.generateFirst') }}
           </BaseButton>
         </div>
       </div>
@@ -141,27 +141,27 @@
     <!-- 编辑密钥对话框 -->
     <div v-if="showEditDialog" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-        <h3 class="text-lg font-semibold mb-4">编辑密钥信息</h3>
+        <h3 class="text-lg font-semibold mb-4">{{ $t('keyManager.actions.edit') }}{{ $t('keyManager.title') }}</h3>
         
         <div class="space-y-4">
           <BaseInput
             v-model="editForm.name"
-            label="密钥名称"
+            :label="$t('keyGenerator.keyInfo.name')"
             required
           />
           
           <BaseInput
             v-model="editForm.comment"
-            label="注释"
+            :label="$t('keyGenerator.keyInfo.comment')"
           />
         </div>
         
         <div class="flex justify-end space-x-3 mt-6">
           <BaseButton variant="secondary" @click="closeEditDialog">
-            取消
+            {{ $t('common.cancel') }}
           </BaseButton>
           <BaseButton @click="saveKeyEdit">
-            保存
+            {{ $t('common.save') }}
           </BaseButton>
         </div>
       </div>
@@ -189,6 +189,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useKeyStore } from '@/stores/key'
 import type { SshKeyPair } from '@/types'
 import BaseButton from '@/components/BaseButton.vue'
@@ -207,6 +208,7 @@ import {
   CircleStackIcon
 } from '@heroicons/vue/24/outline'
 
+const { t } = useI18n()
 const keyStore = useKeyStore()
 
 // 搜索和过滤状态
