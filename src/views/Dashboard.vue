@@ -5,11 +5,12 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
           <div class="flex items-center">
-            <h1 class="text-xl font-semibold text-gray-900">SSH密钥管理器</h1>
+            <h1 class="text-xl font-semibold text-gray-900">{{ $t('dashboard.title') }}</h1>
           </div>
           <div class="flex items-center space-x-4">
+            <LanguageSelector variant="compact" />
             <BaseButton variant="secondary" @click="handleLogout">
-              退出登录
+              {{ $t('nav.logout') }}
             </BaseButton>
           </div>
         </div>
@@ -40,7 +41,7 @@
                 ]"
                 aria-hidden="true"
               />
-              {{ item.label }}
+              {{ item.label.value }}
             </router-link>
           </div>
         </nav>
@@ -51,9 +52,9 @@
         <main class="p-6">
           <div class="max-w-7xl mx-auto">
             <div class="mb-8">
-              <h2 class="text-2xl font-bold text-gray-900">仪表板</h2>
+              <h2 class="text-2xl font-bold text-gray-900">{{ $t('nav.dashboard') }}</h2>
               <p class="mt-1 text-sm text-gray-600">
-                管理您的SSH密钥和配置
+                {{ $t('dashboard.subtitle') }}
               </p>
             </div>
 
@@ -68,7 +69,7 @@
                     <div class="ml-5 w-0 flex-1">
                       <dl>
                         <dt class="text-sm font-medium text-gray-500 truncate">
-                          密钥总数
+                          {{ $t('dashboard.stats.totalKeys') }}
                         </dt>
                         <dd class="text-lg font-medium text-gray-900">
                           {{ keyStore.keys.length }}
@@ -88,10 +89,10 @@
                     <div class="ml-5 w-0 flex-1">
                       <dl>
                         <dt class="text-sm font-medium text-gray-500 truncate">
-                          SSH配置
+                          {{ $t('dashboard.stats.sshConfig') }}
                         </dt>
                         <dd class="text-lg font-medium text-gray-900">
-                          已加载
+                          {{ $t('dashboard.stats.loaded') }}
                         </dd>
                       </dl>
                     </div>
@@ -108,10 +109,10 @@
                     <div class="ml-5 w-0 flex-1">
                       <dl>
                         <dt class="text-sm font-medium text-gray-500 truncate">
-                          状态
+                          {{ $t('dashboard.stats.status') }}
                         </dt>
                         <dd class="text-lg font-medium text-gray-900">
-                          正常
+                          {{ $t('dashboard.stats.normal') }}
                         </dd>
                       </dl>
                     </div>
@@ -124,21 +125,21 @@
             <div class="bg-white shadow rounded-lg">
               <div class="px-4 py-5 sm:p-6">
                 <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                  快速操作
+                  {{ $t('dashboard.quickActions.title') }}
                 </h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <BaseButton
                     @click="$router.push({ name: 'KeyGenerator' })"
                     class="justify-center"
                   >
-                    生成新密钥
+                    {{ $t('dashboard.quickActions.generateKey') }}
                   </BaseButton>
                   <BaseButton
                     variant="secondary"
                     @click="$router.push({ name: 'ConfigEditor' })"
                     class="justify-center"
                   >
-                    编辑SSH配置
+                    {{ $t('dashboard.quickActions.editConfig') }}
                   </BaseButton>
                 </div>
               </div>
@@ -151,11 +152,13 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import { useKeyStore } from '@/stores/key'
 import BaseButton from '@/components/BaseButton.vue'
+import LanguageSelector from '@/components/LanguageSelector.vue'
 import {
   KeyIcon,
   CogIcon,
@@ -167,15 +170,16 @@ import {
 } from '@heroicons/vue/24/outline'
 
 const router = useRouter()
+const { t } = useI18n()
 const authStore = useAuthStore()
 const keyStore = useKeyStore()
 
 const navigation = [
-  { name: 'Dashboard', label: '仪表板', href: '/', icon: HomeIcon },
-  { name: 'KeyManager', label: '密钥管理', href: '/keys', icon: KeyIcon },
-  { name: 'KeyGenerator', label: '生成密钥', href: '/generator', icon: PlusIcon },
-  { name: 'ConfigEditor', label: '配置编辑', href: '/config', icon: DocumentTextIcon },
-  { name: 'Settings', label: '设置', href: '/settings', icon: Cog6ToothIcon },
+  { name: 'Dashboard', label: computed(() => t('nav.dashboard')), href: '/', icon: HomeIcon },
+  { name: 'KeyManager', label: computed(() => t('nav.keyManager')), href: '/keys', icon: KeyIcon },
+  { name: 'KeyGenerator', label: computed(() => t('nav.keyGenerator')), href: '/generator', icon: PlusIcon },
+  { name: 'ConfigEditor', label: computed(() => t('nav.configEditor')), href: '/config', icon: DocumentTextIcon },
+  { name: 'Settings', label: computed(() => t('nav.settings')), href: '/settings', icon: Cog6ToothIcon },
 ]
 
 // 处理退出登录

@@ -1,12 +1,17 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50">
+  <div class="min-h-screen flex items-center justify-center bg-gray-50 relative">
+    <!-- 右上角语言选择 -->
+    <div class="absolute top-4 right-4">
+      <LanguageSelector variant="compact" />
+    </div>
+    
     <div class="max-w-md w-full space-y-8 p-8">
       <div class="text-center">
         <h2 class="text-3xl font-bold text-gray-900">
-          {{ isSetupMode ? '初始化应用' : '解锁应用' }}
+          {{ isSetupMode ? $t('auth.setup.title') : $t('auth.login.title') }}
         </h2>
         <p class="mt-2 text-sm text-gray-600">
-          {{ isSetupMode ? '设置主密码来保护您的SSH密钥' : '输入主密码来访问您的密钥' }}
+          {{ isSetupMode ? $t('auth.setup.subtitle') : $t('auth.login.subtitle') }}
         </p>
       </div>
       
@@ -14,20 +19,20 @@
         <form @submit.prevent="handleSubmit" class="space-y-6">
           <BaseInput
             v-model="password"
-            label="主密码"
+            :label="$t('auth.masterPassword')"
             type="password"
             required
-            :placeholder="isSetupMode ? '请设置一个强密码' : '请输入主密码'"
+            :placeholder="isSetupMode ? $t('auth.setupPlaceholder') : $t('auth.loginPlaceholder')"
             :error="passwordError"
           />
           
           <BaseInput
             v-if="isSetupMode"
             v-model="confirmPassword"
-            label="确认密码"
+            :label="$t('auth.confirmPassword')"
             type="password"
             required
-            placeholder="请再次输入密码"
+            :placeholder="$t('auth.confirmPlaceholder')"
             :error="confirmPasswordError"
           />
           
@@ -40,12 +45,10 @@
                 </svg>
               </div>
               <div class="ml-3">
-                <h3 class="text-sm font-medium text-yellow-800">重要提示</h3>
+                <h3 class="text-sm font-medium text-yellow-800">{{ $t('auth.securityTips.title') }}</h3>
                 <div class="mt-2 text-sm text-yellow-700">
                   <ul class="list-disc list-inside space-y-1">
-                    <li>请妥善保管您的主密码，一旦丢失无法找回</li>
-                    <li>建议使用包含大小写字母、数字和特殊字符的强密码</li>
-                    <li>密码长度建议不少于12位</li>
+                    <li v-for="tip in $t('auth.securityTips.items')" :key="tip">{{ tip }}</li>
                   </ul>
                 </div>
               </div>
@@ -61,8 +64,8 @@
             :disabled="authStore.isLoading || (isSetupMode && password !== confirmPassword)"
             class="w-full"
           >
-            <span v-if="authStore.isLoading">{{ isSetupMode ? '初始化中...' : '登录中...' }}</span>
-            <span v-else>{{ isSetupMode ? '初始化应用' : '解锁' }}</span>
+            <span v-if="authStore.isLoading">{{ isSetupMode ? $t('auth.setup.initializing') : $t('auth.login.loggingIn') }}</span>
+            <span v-else>{{ isSetupMode ? $t('auth.setup.button') : $t('auth.login.button') }}</span>
           </BaseButton>
         </form>
       </div>
@@ -73,13 +76,16 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 import BaseButton from '@/components/BaseButton.vue'
 import BaseInput from '@/components/BaseInput.vue'
+import LanguageSelector from '@/components/LanguageSelector.vue'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 const password = ref('')
 const confirmPassword = ref('')
@@ -107,12 +113,12 @@ const validateForm = (): boolean => {
   error.value = ''
   
   if (password.value.length < 8) {
-    passwordError.value = '密码长度不能少于8位'
+    passwordError.value = t('auth.errors.passwordLength')
     return false
   }
   
   if (isSetupMode.value && password.value !== confirmPassword.value) {
-    confirmPasswordError.value = '两次输入的密码不一致'
+    confirmPasswordError.value = t('auth.errors.passwordMismatch')
     return false
   }
   
@@ -136,10 +142,10 @@ const handleSubmit = async () => {
     if (success) {
       router.push({ name: 'Dashboard' })
     } else {
-      error.value = isSetupMode.value ? '初始化失败' : '密码错误'
+      error.value = isSetupMode.value ? t('auth.errors.initializationFailed') : t('auth.errors.wrongPassword')
     }
   } catch (err) {
-    error.value = '操作失败，请稍后重试'
+    error.value = t('auth.errors.operationFailed')
     console.error('认证失败:', err)
   }
 }
