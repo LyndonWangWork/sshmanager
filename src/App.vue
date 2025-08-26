@@ -16,11 +16,17 @@
     
     <!-- 主要内容 -->
     <div class="relative z-10">
-      <RouterView />
+      <RouterView v-slot="{ Component }">
+        <component :is="Component" v-if="Component" />
+      </RouterView>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-// 主应用组件，使用路由视图
+// 主应用组件，支持页面过渡动画的路由视图
 </script>
+
+<style scoped>
+/* 样式需要时可以在这里添加 */
+</style>

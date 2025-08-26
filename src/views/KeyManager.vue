@@ -1,84 +1,74 @@
 <template>
-  <div class="min-h-screen bg-transparent">
-    <!-- 导航栏 -->
-    <nav class="bg-white shadow-sm border-b border-gray-200">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-          <div class="flex items-center">
-            <router-link to="/" class="text-blue-600 hover:text-blue-800 mr-4">
-              <ArrowLeftIcon class="h-5 w-5" />
-            </router-link>
-            <h1 class="text-xl font-semibold text-gray-900">密钥管理</h1>
-          </div>
-          <div class="flex items-center space-x-4">
-            <BaseButton @click="$router.push({ name: 'KeyGenerator' })">
-              <PlusIcon class="h-4 w-4 mr-2" />
-              生成新密钥
-            </BaseButton>
-            <BaseButton variant="secondary" @click="showImportDialog = true">
-              <ArrowUpTrayIcon class="h-4 w-4 mr-2" />
-              导入密钥
-            </BaseButton>
-            <BaseButton variant="secondary" @click="showExportDialog = true" :disabled="keyStore.keys.length === 0">
-              <ArrowDownTrayIcon class="h-4 w-4 mr-2" />
-              导出密钥
-            </BaseButton>
-          </div>
+  <div class="container mx-auto px-4 py-8">
+    <!-- 统计信息 -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white p-6 rounded-lg shadow-sm">
+      <div class="flex items-center">
+        <div class="p-2 bg-blue-100 rounded-lg">
+          <KeyIcon class="h-6 w-6 text-blue-600" />
+        </div>
+        <div class="ml-4">
+          <p class="text-sm font-medium text-gray-500">总密钥数</p>
+          <p class="text-2xl font-semibold text-gray-900">{{ keyStore.keys.length }}</p>
         </div>
       </div>
-    </nav>
+    </div>
+    
+    <div class="bg-white p-6 rounded-lg shadow-sm">
+      <div class="flex items-center">
+        <div class="p-2 bg-green-100 rounded-lg">
+          <ShieldCheckIcon class="h-6 w-6 text-green-600" />
+        </div>
+        <div class="ml-4">
+          <p class="text-sm font-medium text-gray-500">RSA 密钥</p>
+          <p class="text-2xl font-semibold text-gray-900">{{ rsaKeyCount }}</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bg-white p-6 rounded-lg shadow-sm">
+      <div class="flex items-center">
+        <div class="p-2 bg-purple-100 rounded-lg">
+          <CpuChipIcon class="h-6 w-6 text-purple-600" />
+        </div>
+        <div class="ml-4">
+          <p class="text-sm font-medium text-gray-500">Ed25519 密钥</p>
+          <p class="text-2xl font-semibold text-gray-900">{{ ed25519KeyCount }}</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bg-white p-6 rounded-lg shadow-sm">
+      <div class="flex items-center">
+        <div class="p-2 bg-orange-100 rounded-lg">
+          <CircleStackIcon class="h-6 w-6 text-orange-600" />
+        </div>
+        <div class="ml-4">
+          <p class="text-sm font-medium text-gray-500">ECDSA 密钥</p>
+          <p class="text-2xl font-semibold text-gray-900">{{ ecdsaKeyCount }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <!-- 统计信息 -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white p-6 rounded-lg shadow-sm">
-          <div class="flex items-center">
-            <div class="p-2 bg-blue-100 rounded-lg">
-              <KeyIcon class="h-6 w-6 text-blue-600" />
-            </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-500">总密钥数</p>
-              <p class="text-2xl font-semibold text-gray-900">{{ keyStore.keys.length }}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div class="bg-white p-6 rounded-lg shadow-sm">
-          <div class="flex items-center">
-            <div class="p-2 bg-green-100 rounded-lg">
-              <ShieldCheckIcon class="h-6 w-6 text-green-600" />
-            </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-500">RSA 密钥</p>
-              <p class="text-2xl font-semibold text-gray-900">{{ rsaKeyCount }}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div class="bg-white p-6 rounded-lg shadow-sm">
-          <div class="flex items-center">
-            <div class="p-2 bg-purple-100 rounded-lg">
-              <CpuChipIcon class="h-6 w-6 text-purple-600" />
-            </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-500">Ed25519 密钥</p>
-              <p class="text-2xl font-semibold text-gray-900">{{ ed25519KeyCount }}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div class="bg-white p-6 rounded-lg shadow-sm">
-          <div class="flex items-center">
-            <div class="p-2 bg-orange-100 rounded-lg">
-              <CircleStackIcon class="h-6 w-6 text-orange-600" />
-            </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-500">ECDSA 密钥</p>
-              <p class="text-2xl font-semibold text-gray-900">{{ ecdsaKeyCount }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
+  <!-- 操作按钮区域 -->
+  <div class="mb-8 flex justify-between items-center">
+    <h1 class="text-2xl font-semibold text-gray-900">密钥管理</h1>
+    <div class="flex items-center space-x-4">
+      <BaseButton @click="$router.push({ name: 'KeyGenerator' })">
+        <PlusIcon class="h-4 w-4 mr-2" />
+        生成新密钥
+      </BaseButton>
+      <BaseButton variant="secondary" @click="showImportDialog = true">
+        <ArrowUpTrayIcon class="h-4 w-4 mr-2" />
+        导入密钥
+      </BaseButton>
+      <BaseButton variant="secondary" @click="showExportDialog = true" :disabled="keyStore.keys.length === 0">
+        <ArrowDownTrayIcon class="h-4 w-4 mr-2" />
+        导出密钥
+      </BaseButton>
+    </div>
+  </div>
 
       <!-- 搜索和过滤 -->
       <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
@@ -147,7 +137,6 @@
           @export="handleExportKey"
         />
       </div>
-    </div>
 
     <!-- 编辑密钥对话框 -->
     <div v-if="showEditDialog" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -178,23 +167,23 @@
       </div>
     </div>
 
-    <!-- 导入导出对话框 -->
-    <ImportExportDialog
-      :show="showImportDialog"
-      mode="import"
-      @close="showImportDialog = false"
-      @success="handleImportSuccess"
-      @error="handleImportError"
-    />
-    
-    <ImportExportDialog
-      :show="showExportDialog"
-      mode="export"
-      :selected-keys="selectedKeys"
-      @close="showExportDialog = false"
-      @success="handleExportSuccess"
-      @error="handleExportError"
-    />
+  <!-- 导入导出对话框 -->
+  <ImportExportDialog
+    :show="showImportDialog"
+    mode="import"
+    @close="showImportDialog = false"
+    @success="handleImportSuccess"
+    @error="handleImportError"
+  />
+  
+  <ImportExportDialog
+    :show="showExportDialog"
+    mode="export"
+    :selected-keys="selectedKeys"
+    @close="showExportDialog = false"
+    @success="handleExportSuccess"
+    @error="handleExportError"
+  />
   </div>
 </template>
 

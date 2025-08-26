@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/auth'
 
 // 路由组件懒加载
 const Auth = () => import('@/views/Auth.vue')
+const MainLayout = () => import('@/components/MainLayout.vue')
 const Dashboard = () => import('@/views/Dashboard.vue')
 const KeyManager = () => import('@/views/KeyManager.vue')
 const KeyGenerator = () => import('@/views/KeyGenerator.vue')
@@ -19,33 +20,35 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/',
-    name: 'Dashboard',
-    component: Dashboard,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/keys',
-    name: 'KeyManager',
-    component: KeyManager,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/generator',
-    name: 'KeyGenerator', 
-    component: KeyGenerator,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/config',
-    name: 'ConfigEditor',
-    component: ConfigEditor,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/settings',
-    name: 'Settings',
-    component: Settings,
-    meta: { requiresAuth: true }
+    component: MainLayout,
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: '',
+        name: 'Dashboard',
+        component: Dashboard
+      },
+      {
+        path: 'keys',
+        name: 'KeyManager',
+        component: KeyManager
+      },
+      {
+        path: 'generator',
+        name: 'KeyGenerator',
+        component: KeyGenerator
+      },
+      {
+        path: 'config',
+        name: 'ConfigEditor',
+        component: ConfigEditor
+      },
+      {
+        path: 'settings',
+        name: 'Settings',
+        component: Settings
+      }
+    ]
   }
 ]
 

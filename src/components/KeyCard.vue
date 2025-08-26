@@ -34,18 +34,10 @@
         </button>
         
         <!-- 下拉菜单 -->
-        <Transition
-          enter-active-class="transition duration-200 ease-out"
-          enter-from-class="transform scale-95 opacity-0"
-          enter-to-class="transform scale-100 opacity-100"
-          leave-active-class="transition duration-150 ease-in"
-          leave-from-class="transform scale-100 opacity-100"
-          leave-to-class="transform scale-95 opacity-0"
+        <div
+          v-if="showMenu"
+          class="absolute right-0 mt-2 w-52 bg-white/90 backdrop-blur-xl rounded-xl shadow-elevation-3 border border-white/20 z-20"
         >
-          <div
-            v-if="showMenu"
-            class="absolute right-0 mt-2 w-52 bg-white/90 backdrop-blur-xl rounded-xl shadow-elevation-3 border border-white/20 z-20"
-          >
             <div class="py-2">
               <button
                 @click="copyPublicKey"
@@ -78,8 +70,7 @@
               </button>
             </div>
           </div>
-        </Transition>
-      </div>
+        </div>
     </div>
     
     <!-- 密钥详细信息 -->
@@ -120,15 +111,7 @@
     </div>
     
     <!-- 公钥预览 -->
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="transform scale-95 opacity-0 max-h-0"
-      enter-to-class="transform scale-100 opacity-100 max-h-32"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="transform scale-100 opacity-100 max-h-32"
-      leave-to-class="transform scale-95 opacity-0 max-h-0"
-    >
-      <div v-if="showPublicKey" class="mt-6 pt-6 border-t border-tech-200/50">
+    <div v-if="showPublicKey" class="mt-6 pt-6 border-t border-tech-200/50">
         <label class="block text-sm font-medium text-tech-700 mb-3">公钥内容</label>
         <div class="relative">
           <textarea
@@ -146,7 +129,6 @@
           </button>
         </div>
       </div>
-    </Transition>
     
     <!-- 展开/收起按钮 -->
     <button

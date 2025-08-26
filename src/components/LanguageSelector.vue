@@ -3,14 +3,20 @@
     <!-- 语言切换按钮 -->
     <button
       @click="showDropdown = !showDropdown"
-      class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
-      :class="variant === 'compact' ? 'p-2' : 'px-3 py-2'"
+      class="flex items-center space-x-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
+      :class="{
+        'p-2': variant === 'compact' || variant === 'icon',
+        'px-3 py-2': variant === 'default'
+      }"
     >
       <LanguageIcon class="h-4 w-4" />
-      <span v-if="variant !== 'compact'" class="hidden sm:block">
+      <span v-if="variant === 'default'" class="hidden sm:block">
         {{ currentLanguage.nativeName }}
       </span>
-      <ChevronDownIcon class="h-4 w-4" />
+      <span v-if="variant === 'compact'">
+        {{ currentLanguage.code.toUpperCase() }}
+      </span>
+      <ChevronDownIcon v-if="variant !== 'icon'" class="h-4 w-4" />
     </button>
 
     <!-- 下拉菜单 -->
@@ -60,7 +66,7 @@ import {
 } from '@heroicons/vue/24/outline'
 
 interface Props {
-  variant?: 'default' | 'compact'
+  variant?: 'default' | 'compact' | 'icon'
 }
 
 const { variant = 'default' } = defineProps<Props>()
