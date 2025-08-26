@@ -99,23 +99,52 @@
             <h2 class="text-lg font-semibold text-gray-900 mb-4">高级选项</h2>
             
             <div class="space-y-4">
-              <label class="flex items-center">
-                <input
-                  v-model="advancedOptions.addToAgent"
-                  type="checkbox"
-                  class="mr-3"
-                />
-                <span class="text-sm">生成后自动添加到 SSH Agent</span>
-              </label>
-              
-              <label class="flex items-center">
-                <input
-                  v-model="advancedOptions.autoBackup"
-                  type="checkbox"
-                  class="mr-3"
-                />
-                <span class="text-sm">自动备份到指定目录</span>
-              </label>
+              <!-- 密码保护 -->
+              <div>
+                <label class="flex items-center mb-3">
+                  <input
+                    v-model="advancedOptions.usePassphrase"
+                    type="checkbox"
+                    class="mr-3"
+                  />
+                  <span class="text-sm font-medium">使用密码保护私钥（推荐）</span>
+                </label>
+                
+                <div v-if="advancedOptions.usePassphrase" class="ml-6 space-y-3">
+                  <BaseInput
+                    v-model="keyParams.passphrase"
+                    label="密钥密码"
+                    type="password"
+                    placeholder="请输入一个强密码来保护私钥"
+                    :error="errors.passphrase"
+                    hint="密码长度建议不少于8位，包含字母、数字和特殊字符"
+                  />
+                  
+                  <BaseInput
+                    v-model="passphraseConfirm"
+                    label="确认密码"
+                    type="password"
+                    placeholder="请再次输入密码"
+                    :error="errors.passphraseConfirm"
+                  />
+                  
+                  <div class="bg-blue-50 border border-blue-200 rounded-md p-3">
+                    <div class="flex">
+                      <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                        </svg>
+                      </div>
+                      <div class="ml-3">
+                        <h3 class="text-sm font-medium text-blue-800">安全提示</h3>
+                        <div class="mt-2 text-sm text-blue-700">
+                          <p>密码保护可以防止私钥文件被盗用。即使文件被获取，没有密码也无法使用。</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           
@@ -275,14 +304,17 @@ const keyParams = reactive<KeyGenerationParams>({
   name: '',
   key_type: 'Ed25519' as SshKeyType,
   key_size: 256,
-  comment: ''
+  comment: '',
+  passphrase: ''
 })
 
 // 高级选项
 const advancedOptions = reactive({
-  addToAgent: true,
-  autoBackup: false
+  usePassphrase: false
 })
+
+// 额外状态
+const passphraseConfirm = ref('')
 
 // 状态管理
 const isGenerating = ref(false)
@@ -290,7 +322,9 @@ const progress = ref(0)
 const progressText = ref('')
 const generatedKey = ref<SshKeyPair | null>(null)
 const errors = reactive({
-  name: ''
+  name: '',
+  passphrase: '',
+  passphraseConfirm: ''
 })
 
 // 密钥类型配置
@@ -329,7 +363,17 @@ const availableKeySizes = computed(() => {
 
 // 表单有效性验证
 const isFormValid = computed(() => {
-  return keyParams.name.trim().length > 0
+  const basicValid = keyParams.name.trim().length > 0
+  
+  if (!advancedOptions.usePassphrase) {
+    return basicValid
+  }
+  
+  const passphraseValid = keyParams.passphrase && 
+    keyParams.passphrase.length >= 8 &&
+    keyParams.passphrase === passphraseConfirm.value
+    
+  return basicValid && passphraseValid
 })
 
 // 密钥类型变化时更新密钥长度
@@ -341,11 +385,29 @@ const onKeyTypeChange = () => {
 const generateKey = async () => {
   // 清除错误
   errors.name = ''
+  errors.passphrase = ''
+  errors.passphraseConfirm = ''
   
   // 验证表单
   if (!keyParams.name.trim()) {
     errors.name = '请输入密钥名称'
     return
+  }
+  
+  // 验证密码
+  if (advancedOptions.usePassphrase) {
+    if (!keyParams.passphrase || keyParams.passphrase.length < 8) {
+      errors.passphrase = '密码长度不能少于8位'
+      return
+    }
+    
+    if (keyParams.passphrase !== passphraseConfirm.value) {
+      errors.passphraseConfirm = '两次输入的密码不一致'
+      return
+    }
+  } else {
+    // 如果不使用密码，清空密码字段
+    keyParams.passphrase = ''
   }
   
   isGenerating.value = true
@@ -372,15 +434,6 @@ const generateKey = async () => {
     const result = await keyStore.generateKey(keyParams)
     if (result) {
       generatedKey.value = result
-      
-      // 如果启用了高级选项，执行相应操作
-      if (advancedOptions.addToAgent) {
-        console.log('添加到 SSH Agent...')
-      }
-      
-      if (advancedOptions.autoBackup) {
-        console.log('自动备份...')
-      }
     }
   } catch (error) {
     console.error('生成密钥失败:', error)
@@ -432,7 +485,14 @@ const generateAnother = () => {
   generatedKey.value = null
   keyParams.name = ''
   keyParams.comment = ''
+  keyParams.passphrase = ''
+  passphraseConfirm.value = ''
   progress.value = 0
   progressText.value = ''
+  
+  // 清除错误信息
+  errors.name = ''
+  errors.passphrase = ''
+  errors.passphraseConfirm = ''
 }
 </script>

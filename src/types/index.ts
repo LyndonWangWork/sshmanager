@@ -19,6 +19,7 @@ export interface KeyGenerationParams {
   key_type: SshKeyType;
   key_size: number;
   comment: string;
+  passphrase?: string; // 密钥密码（可选）
 }
 
 // 应用配置类型

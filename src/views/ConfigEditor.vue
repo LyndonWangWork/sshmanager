@@ -143,23 +143,24 @@
                   <div
                     v-for="(option, index) in otherOptionsArray"
                     :key="index"
-                    class="flex space-x-2"
+                    class="flex items-center space-x-2"
                   >
                     <input
                       v-model="option.key"
                       @input="updateOptionKey(index, ($event.target as HTMLInputElement).value)"
                       placeholder="选项名"
-                      class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      class="w-32 min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     />
                     <input
                       v-model="option.value"
                       @input="updateOptionValue(index, ($event.target as HTMLInputElement).value)"
                       placeholder="选项值"
-                      class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      class="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     />
                     <button
                       @click="removeOptionByIndex(index)"
-                      class="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                      class="flex-shrink-0 p-2 text-gray-400 hover:text-red-600 transition-colors"
+                      title="删除选项"
                     >
                       <TrashIcon class="h-4 w-4" />
                     </button>

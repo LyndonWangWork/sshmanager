@@ -28,6 +28,7 @@ pub struct KeyGenerationParams {
     pub key_type: SshKeyType,
     pub key_size: u32,
     pub comment: String,
+    pub passphrase: Option<String>, // 密钥密码（可选）
 }
 
 #[derive(Debug, Serialize, Deserialize)]
