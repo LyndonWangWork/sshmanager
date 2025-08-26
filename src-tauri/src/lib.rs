@@ -1,0 +1,34 @@
+mod commands;
+mod services;
+mod types;
+mod error;
+mod storage;
+
+#[cfg(test)]
+mod tests;
+
+use commands::*;
+use services::CryptoService;
+use storage::StorageService;
+use std::sync::Mutex;
+
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+    tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
+        .manage(Mutex::new(CryptoService::new()))
+        .manage(Mutex::new(StorageService::new().expect("存储服务初始化失败")))
+        .invoke_handler(tauri::generate_handler![
+            is_initialized,
+            initialize_app,
+            authenticate,
+            generate_ssh_key,
+            get_all_keys,
+            delete_key,
+            export_key,
+            import_keys,
+            export_all_keys,
+        ])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
+}
