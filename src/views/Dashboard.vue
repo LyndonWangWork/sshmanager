@@ -1,11 +1,16 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- 导航栏 -->
-    <nav class="bg-white shadow-sm border-b border-gray-200">
+  <div class="min-h-screen bg-transparent">
+    <!-- 现代导航栏 -->
+    <nav class="nav-glass sticky top-0 z-50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
           <div class="flex items-center">
-            <h1 class="text-xl font-semibold text-gray-900">{{ $t('dashboard.title') }}</h1>
+            <div class="flex items-center space-x-3">
+              <div class="p-2 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 shadow-glow">
+                <KeyIcon class="h-6 w-6 text-white" />
+              </div>
+              <h1 class="text-xl font-semibold text-gradient">{{ $t('dashboard.title') }}</h1>
+            </div>
           </div>
           <div class="flex items-center space-x-4">
             <LanguageSelector variant="compact" />
@@ -18,26 +23,26 @@
     </nav>
 
     <div class="flex">
-      <!-- 侧边栏 -->
-      <div class="w-64 bg-white shadow-sm h-screen">
-        <nav class="mt-5 px-2">
-          <div class="space-y-1">
+      <!-- 现代侧边栏 -->
+      <div class="w-64 sidebar min-h-screen">
+        <nav class="mt-8 px-4">
+          <div class="space-y-2">
             <router-link
               v-for="item in navigation"
               :key="item.name"
               :to="item.href"
               :class="[
                 $route.name === item.name
-                  ? 'bg-blue-100 text-blue-900'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
-                'group flex items-center px-2 py-2 text-sm font-medium rounded-md'
+                  ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-glow'
+                  : 'text-tech-600 hover:bg-white/60 hover:text-primary-600',
+                'group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-300 hover:scale-105'
               ]"
             >
               <component
                 :is="item.icon"
                 :class="[
-                  $route.name === item.name ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500',
-                  'mr-3 h-5 w-5'
+                  $route.name === item.name ? 'text-white' : 'text-tech-400 group-hover:text-primary-500',
+                  'mr-3 h-5 w-5 transition-colors duration-300'
                 ]"
                 aria-hidden="true"
               />
@@ -49,96 +54,90 @@
 
       <!-- 主内容区 -->
       <div class="flex-1 overflow-hidden">
-        <main class="p-6">
+        <main class="p-8">
           <div class="max-w-7xl mx-auto">
-            <div class="mb-8">
-              <h2 class="text-2xl font-bold text-gray-900">{{ $t('nav.dashboard') }}</h2>
-              <p class="mt-1 text-sm text-gray-600">
+            <!-- 欢迎标题 -->
+            <div class="mb-10 animate-fade-in">
+              <h2 class="text-3xl font-bold text-gradient mb-2">{{ $t('nav.dashboard') }}</h2>
+              <p class="text-tech-600 text-lg">
                 {{ $t('dashboard.subtitle') }}
               </p>
             </div>
 
             <!-- 统计卡片 -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="p-5">
-                  <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                      <KeyIcon class="h-6 w-6 text-gray-400" aria-hidden="true" />
-                    </div>
-                    <div class="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt class="text-sm font-medium text-gray-500 truncate">
-                          {{ $t('dashboard.stats.totalKeys') }}
-                        </dt>
-                        <dd class="text-lg font-medium text-gray-900">
-                          {{ keyStore.keys.length }}
-                        </dd>
-                      </dl>
-                    </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+              <div class="stat-card animate-slide-up" style="animation-delay: 0.1s">
+                <div class="flex items-center">
+                  <div class="p-4 rounded-2xl bg-gradient-to-br from-primary-100 to-primary-200 mr-4">
+                    <KeyIcon class="h-8 w-8 text-primary-600 icon-glow" aria-hidden="true" />
+                  </div>
+                  <div class="flex-1">
+                    <dt class="text-sm font-medium text-tech-600 mb-1">
+                      {{ $t('dashboard.stats.totalKeys') }}
+                    </dt>
+                    <dd class="text-3xl font-bold text-tech-900">
+                      {{ keyStore.keys.length }}
+                    </dd>
                   </div>
                 </div>
               </div>
 
-              <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="p-5">
-                  <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                      <CogIcon class="h-6 w-6 text-gray-400" aria-hidden="true" />
-                    </div>
-                    <div class="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt class="text-sm font-medium text-gray-500 truncate">
-                          {{ $t('dashboard.stats.sshConfig') }}
-                        </dt>
-                        <dd class="text-lg font-medium text-gray-900">
-                          {{ $t('dashboard.stats.loaded') }}
-                        </dd>
-                      </dl>
-                    </div>
+              <div class="stat-card animate-slide-up" style="animation-delay: 0.2s">
+                <div class="flex items-center">
+                  <div class="p-4 rounded-2xl bg-gradient-to-br from-success-100 to-success-200 mr-4">
+                    <CogIcon class="h-8 w-8 text-success-600 icon-glow" aria-hidden="true" />
+                  </div>
+                  <div class="flex-1">
+                    <dt class="text-sm font-medium text-tech-600 mb-1">
+                      {{ $t('dashboard.stats.sshConfig') }}
+                    </dt>
+                    <dd class="text-3xl font-bold text-tech-900">
+                      {{ $t('dashboard.stats.loaded') }}
+                    </dd>
                   </div>
                 </div>
               </div>
 
-              <div class="bg-white overflow-hidden shadow rounded-lg">
-                <div class="p-5">
-                  <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                      <CheckCircleIcon class="h-6 w-6 text-green-400" aria-hidden="true" />
-                    </div>
-                    <div class="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt class="text-sm font-medium text-gray-500 truncate">
-                          {{ $t('dashboard.stats.status') }}
-                        </dt>
-                        <dd class="text-lg font-medium text-gray-900">
-                          {{ $t('dashboard.stats.normal') }}
-                        </dd>
-                      </dl>
-                    </div>
+              <div class="stat-card animate-slide-up" style="animation-delay: 0.3s">
+                <div class="flex items-center">
+                  <div class="p-4 rounded-2xl bg-gradient-to-br from-accent-100 to-accent-200 mr-4">
+                    <CheckCircleIcon class="h-8 w-8 text-accent-600 icon-glow" aria-hidden="true" />
+                  </div>
+                  <div class="flex-1">
+                    <dt class="text-sm font-medium text-tech-600 mb-1">
+                      {{ $t('dashboard.stats.status') }}
+                    </dt>
+                    <dd class="text-3xl font-bold text-tech-900">
+                      {{ $t('dashboard.stats.normal') }}
+                    </dd>
                   </div>
                 </div>
               </div>
             </div>
 
             <!-- 快速操作 -->
-            <div class="bg-white shadow rounded-lg">
-              <div class="px-4 py-5 sm:p-6">
-                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+            <div class="card animate-slide-up" style="animation-delay: 0.4s">
+              <div class="card-body">
+                <h3 class="text-xl font-semibold text-tech-900 mb-6 flex items-center">
+                  <div class="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></div>
                   {{ $t('dashboard.quickActions.title') }}
                 </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <BaseButton
                     @click="$router.push({ name: 'KeyGenerator' })"
-                    class="justify-center"
+                    class="justify-center h-14"
+                    size="lg"
                   >
+                    <PlusIcon class="w-5 h-5 mr-2" />
                     {{ $t('dashboard.quickActions.generateKey') }}
                   </BaseButton>
                   <BaseButton
                     variant="secondary"
                     @click="$router.push({ name: 'ConfigEditor' })"
-                    class="justify-center"
+                    class="justify-center h-14"
+                    size="lg"
                   >
+                    <DocumentTextIcon class="w-5 h-5 mr-2" />
                     {{ $t('dashboard.quickActions.editConfig') }}
                   </BaseButton>
                 </div>

@@ -1,57 +1,97 @@
 <template>
-  <div>
+  <div class="space-y-2">
     <label
       v-if="label"
       :for="inputId"
-      class="block text-sm font-medium text-gray-700 mb-1"
+      class="block text-sm font-medium text-tech-700 mb-1 transition-colors"
     >
       {{ label }}
-      <span v-if="required" class="text-red-500">*</span>
+      <span v-if="required" class="text-error-500 ml-1">*</span>
     </label>
-    <input
-      :id="inputId"
-      :value="modelValue"
-      @input="updateValue"
-      :type="type"
-      :required="required"
-      :disabled="disabled"
-      :placeholder="placeholder"
-      :class="inputClasses"
-    />
-    <p v-if="error" class="mt-1 text-sm text-red-600">
-      {{ error }}
-    </p>
-    <p v-else-if="hint" class="mt-1 text-sm text-gray-500">
+    
+    <div class="relative">
+      <!-- 前置图标 -->
+      <div v-if="prefixIcon" class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+        <component :is="prefixIcon" class="h-5 w-5 text-tech-400" />
+      </div>
+      
+      <input
+        :id="inputId"
+        :value="modelValue || ''"
+        @input="updateValue"
+        @focus="focused = true"
+        @blur="focused = false"
+        :type="type"
+        :required="required"
+        :disabled="disabled"
+        :placeholder="placeholder"
+        :class="inputClasses"
+        :readonly="readonly"
+      />
+      
+      <!-- 后置图标 -->
+      <div v-if="suffixIcon" class="absolute inset-y-0 right-0 pr-3 flex items-center">
+        <component :is="suffixIcon" class="h-5 w-5 text-tech-400" />
+      </div>
+      
+      <!-- 加载状态 -->
+      <div v-if="loading" class="absolute inset-y-0 right-0 pr-3 flex items-center">
+        <div class="loading-spinner w-4 h-4"></div>
+      </div>
+    </div>
+    
+    <!-- 错误信息 -->
+    <div v-if="error" class="flex items-center mt-2 animate-slide-down">
+      <svg class="w-4 h-4 text-error-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+      </svg>
+      <p class="text-sm text-error-600">{{ error }}</p>
+    </div>
+    
+    <!-- 提示信息 -->
+    <p v-else-if="hint" class="mt-1 text-sm text-tech-500 animate-fade-in">
       {{ hint }}
     </p>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, useId } from 'vue'
+import { computed, ref, useId } from 'vue'
+import type { Component } from 'vue'
 
 interface Props {
-  modelValue: string | number
+  modelValue: string | number | undefined
   label?: string
   type?: string
   required?: boolean
   disabled?: boolean
+  readonly?: boolean
+  loading?: boolean
   placeholder?: string
   error?: string
   hint?: string
+  prefixIcon?: Component
+  suffixIcon?: Component
+  size?: 'sm' | 'md' | 'lg'
 }
 
 const props = withDefaults(defineProps<Props>(), {
   type: 'text',
   required: false,
   disabled: false,
+  readonly: false,
+  loading: false,
+  size: 'md',
 })
 
 const emit = defineEmits<{
-  'update:modelValue': [value: string | number]
+  'update:modelValue': [value: string | number | undefined]
+  focus: [event: FocusEvent]
+  blur: [event: FocusEvent]
 }>()
 
 const inputId = useId()
+const focused = ref(false)
 
 const updateValue = (event: Event) => {
   const target = event.target as HTMLInputElement
@@ -67,16 +107,39 @@ const updateValue = (event: Event) => {
 }
 
 const inputClasses = computed(() => {
-  let classes = 'input'
+  const baseClasses = 'input transition-all duration-300'
+  const sizeClasses = {
+    sm: 'px-3 py-2 text-sm',
+    md: 'px-4 py-3 text-base',
+    lg: 'px-5 py-4 text-lg'
+  }
+  
+  let classes = [baseClasses, sizeClasses[props.size]]
+  
+  // 前置图标时增加左内边距
+  if (props.prefixIcon) {
+    classes.push('pl-10')
+  }
+  
+  // 后置图标或加载状态时增加右内边距
+  if (props.suffixIcon || props.loading) {
+    classes.push('pr-10')
+  }
   
   if (props.error) {
-    classes += ' border-red-300 focus:border-red-500 focus:ring-red-500'
+    classes.push('border-error-300 focus:border-error-500 focus:ring-error-500 bg-error-50/50')
+  } else if (focused.value) {
+    classes.push('ring-2 ring-primary-500 border-primary-500 shadow-glow')
   }
   
   if (props.disabled) {
-    classes += ' bg-gray-100 cursor-not-allowed'
+    classes.push('bg-tech-100 cursor-not-allowed opacity-60')
   }
   
-  return classes
+  if (props.readonly) {
+    classes.push('bg-tech-50 cursor-default')
+  }
+  
+  return classes.join(' ')
 })
 </script>
