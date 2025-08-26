@@ -8,7 +8,7 @@
             <h1 class="text-xl font-semibold text-gray-900">SSH密钥管理器</h1>
           </div>
           <div class="flex items-center space-x-4">
-            <BaseButton variant="secondary" @click="authStore.logout">
+            <BaseButton variant="secondary" @click="handleLogout">
               退出登录
             </BaseButton>
           </div>
@@ -177,6 +177,16 @@ const navigation = [
   { name: 'ConfigEditor', label: '配置编辑', href: '/config', icon: DocumentTextIcon },
   { name: 'Settings', label: '设置', href: '/settings', icon: Cog6ToothIcon },
 ]
+
+// 处理退出登录
+const handleLogout = async () => {
+  try {
+    authStore.logout()
+    await router.push({ name: 'Auth', query: { mode: 'login' } })
+  } catch (error) {
+    console.error('退出登录失败:', error)
+  }
+}
 
 onMounted(async () => {
   try {
