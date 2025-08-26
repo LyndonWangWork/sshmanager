@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use std::fmt;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SshKeyPair {
@@ -20,6 +21,17 @@ pub enum SshKeyType {
     Rsa,
     Ed25519,
     Ecdsa,
+}
+
+// 为SshKeyType实现Display trait
+impl fmt::Display for SshKeyType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            SshKeyType::Rsa => write!(f, "RSA"),
+            SshKeyType::Ed25519 => write!(f, "Ed25519"),
+            SshKeyType::Ecdsa => write!(f, "ECDSA"),
+        }
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -64,4 +76,25 @@ pub struct SshHostConfig {
 pub struct SshConfig {
     pub hosts: Vec<SshHostConfig>,
     pub global_settings: std::collections::HashMap<String, String>,
+}
+
+// 测试模块
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_ssh_key_type_display() {
+        assert_eq!(format!("{}", SshKeyType::Rsa), "RSA");
+        assert_eq!(format!("{}", SshKeyType::Ed25519), "Ed25519");
+        assert_eq!(format!("{}", SshKeyType::Ecdsa), "ECDSA");
+    }
+
+    #[test]
+    fn test_ssh_key_type_debug() {
+        // 确保Debug trait仍然正常工作
+        assert_eq!(format!("{:?}", SshKeyType::Rsa), "Rsa");
+        assert_eq!(format!("{:?}", SshKeyType::Ed25519), "Ed25519");
+        assert_eq!(format!("{:?}", SshKeyType::Ecdsa), "Ecdsa");
+    }
 }
