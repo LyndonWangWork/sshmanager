@@ -50,7 +50,7 @@
             <input
               ref="fileInput"
               type="file"
-              accept=".json,.key,.pub"
+              accept=".json,.key,.pub,.pem,application/json,text/plain"
               @change="handleFileSelect"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -248,36 +248,244 @@ const exportPreview = computed(() => {
 // 文件选择处理
 const handleFileSelect = (event: Event) => {
   const file = (event.target as HTMLInputElement).files?.[0]
-  if (!file) return
+  if (!file) {
+    previewKeys.value = []
+    return
+  }
   
   const reader = new FileReader()
   reader.onload = (e) => {
     try {
       const content = e.target?.result as string
-      const data = JSON.parse(content)
+      const fileName = file.name.toLowerCase()
       
-      if (data.keys && Array.isArray(data.keys)) {
-        previewKeys.value = data.keys
+      let keysArray: any[] = []
+      
+      // 根据文件扩展名和内容判断文件类型
+      if (fileName.endsWith('.pub')) {
+        // SSH公钥文件
+        keysArray = parsePublicKeyFile(content, fileName)
+      } else if (fileName.endsWith('.key') || fileName.includes('id_') || content.includes('BEGIN') && content.includes('PRIVATE KEY')) {
+        // SSH私钥文件
+        keysArray = parsePrivateKeyFile(content, fileName)
       } else {
-        emit('error', '无效的密钥文件格式')
+        // JSON格式文件
+        keysArray = parseJsonFile(content)
+      }
+      
+      // 验证密钥对象的必要字段
+      const validKeys = keysArray.filter(key => 
+        key && 
+        typeof key === 'object' && 
+        key.id && 
+        key.name && 
+        key.key_type
+      )
+      
+      if (validKeys.length === 0) {
+        emit('error', '文件中没有找到有效的密钥数据')
+        previewKeys.value = []
+        return
+      }
+      
+      previewKeys.value = validKeys
+      
+      // 成功解析后给用户反馈
+      if (validKeys.length !== keysArray.length) {
+        emit('error', `解析成功，但有 ${keysArray.length - validKeys.length} 个无效密钥被忽略`)
       }
     } catch (error) {
-      emit('error', '文件解析失败')
+      console.error('文件解析错误:', error)
+      emit('error', `文件解析失败：${error instanceof Error ? error.message : '未知错误'}`)
+      previewKeys.value = []
     }
   }
+  
+  reader.onerror = () => {
+    emit('error', '文件读取失败')
+    previewKeys.value = []
+  }
+  
   reader.readAsText(file)
+}
+
+// 直接解析文本输入的函数
+const parseTextInput = (text: string): SshKeyPair[] => {
+  if (!text.trim()) return []
+  
+  try {
+    const data = JSON.parse(text)
+    let keysArray: any[] = []
+    
+    if (data.keys && Array.isArray(data.keys)) {
+      // 标准导出格式：{ keys: [...] }
+      keysArray = data.keys
+    } else if (Array.isArray(data)) {
+      // 直接是密钥数组格式：[...]
+      keysArray = data
+    } else if (data.id && data.name && data.key_type) {
+      // 单个密钥对象格式：{ id, name, ... }
+      keysArray = [data]
+    } else {
+      return []
+    }
+    
+    // 验证密钥对象的必要字段
+    return keysArray.filter(key => 
+      key && 
+      typeof key === 'object' && 
+      key.id && 
+      key.name && 
+      key.key_type
+    )
+  } catch {
+    return []
+  }
+}
+
+// 解析JSON文件
+const parseJsonFile = (content: string): any[] => {
+  const data = JSON.parse(content)
+  
+  if (data.keys && Array.isArray(data.keys)) {
+    // 标准导出格式：{ keys: [...] }
+    return data.keys
+  } else if (Array.isArray(data)) {
+    // 直接是密钥数组格式：[...]
+    return data
+  } else if (data.id && data.name && data.key_type) {
+    // 单个密钥对象格式：{ id, name, ... }
+    return [data]
+  } else {
+    throw new Error('无效的JSON文件格式。支持的格式：标准导出文件、密钥数组或单个密钥对象')
+  }
+}
+
+// 解析SSH公钥文件 (.pub)
+const parsePublicKeyFile = (content: string, fileName: string): any[] => {
+  const lines = content.split('\n').filter(line => line.trim())
+  const keys: any[] = []
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim()
+    if (!line) continue
+    
+    try {
+      const parts = line.split(' ')
+      if (parts.length < 2) continue
+      
+      const keyType = parts[0]
+      const keyData = parts[1]
+      const comment = parts.slice(2).join(' ') || ''
+      
+      // 推断密钥类型
+      let normalizedKeyType = 'Unknown'
+      if (keyType.includes('rsa')) {
+        normalizedKeyType = 'Rsa'
+      } else if (keyType.includes('ed25519')) {
+        normalizedKeyType = 'Ed25519'
+      } else if (keyType.includes('ecdsa')) {
+        normalizedKeyType = 'Ecdsa'
+      }
+      
+      // 生成密钥名称
+      const baseName = fileName.replace(/\.pub$/, '').replace(/^.*[\\\/]/, '')
+      const keyName = comment || baseName || `imported_key_${Date.now()}`
+      
+      keys.push({
+        id: `imported_${Date.now()}_${i}`,
+        name: keyName,
+        key_type: normalizedKeyType,
+        key_size: getKeySizeFromType(normalizedKeyType),
+        comment: comment,
+        public_key: line,
+        private_key: '', // 公钥文件不包含私钥
+        fingerprint: generateFingerprint(keyData),
+        created_at: new Date().toISOString()
+      })
+    } catch (error) {
+      console.warn(`解析公钥第 ${i + 1} 行失败:`, error)
+    }
+  }
+  
+  return keys
+}
+
+// 解析SSH私钥文件 (.key 或无扩展名)
+const parsePrivateKeyFile = (content: string, fileName: string): any[] => {
+  const keys: any[] = []
+  
+  try {
+    // 检测私钥类型
+    let keyType = 'Unknown'
+    if (content.includes('BEGIN RSA PRIVATE KEY') || content.includes('BEGIN OPENSSH PRIVATE KEY') && content.includes('rsa')) {
+      keyType = 'Rsa'
+    } else if (content.includes('BEGIN OPENSSH PRIVATE KEY') && content.includes('ed25519')) {
+      keyType = 'Ed25519'
+    } else if (content.includes('BEGIN EC PRIVATE KEY') || content.includes('ecdsa')) {
+      keyType = 'Ecdsa'
+    }
+    
+    // 生成密钥名称
+    const baseName = fileName.replace(/\.(key|pem)$/, '').replace(/^.*[\\\/]/, '')
+    const keyName = baseName || `imported_private_key_${Date.now()}`
+    
+    keys.push({
+      id: `imported_${Date.now()}`,
+      name: keyName,
+      key_type: keyType,
+      key_size: getKeySizeFromType(keyType),
+      comment: '',
+      public_key: '', // 私钥文件通常不包含公钥，需要用户后续添加
+      private_key: content,
+      fingerprint: 'Unknown', // 需要公钥才能生成指纹
+      created_at: new Date().toISOString()
+    })
+  } catch (error) {
+    console.warn('解析私钥文件失败:', error)
+  }
+  
+  return keys
+}
+
+// 根据密钥类型获取默认密钥长度
+const getKeySizeFromType = (keyType: string): number => {
+  switch (keyType) {
+    case 'Ed25519':
+      return 256
+    case 'Rsa':
+      return 2048 // 默认RSA长度
+    case 'Ecdsa':
+      return 256 // 默认ECDSA长度
+    default:
+      return 0
+  }
+}
+
+// 生成简单的指纹 (仅作示例，实际需要更复杂的算法)
+const generateFingerprint = (keyData: string): string => {
+  // 这里只是一个简单的示例，实际应用中应该使用正确的SHA256算法
+  const hash = keyData.substring(0, 43) // 取前43个字符
+  return `SHA256:${hash}`
 }
 
 // 监听文本输入变化
 watch(importText, (newText) => {
-  if (importMethod.value === 'text' && newText.trim()) {
-    try {
-      const data = JSON.parse(newText)
-      if (data.keys && Array.isArray(data.keys)) {
-        previewKeys.value = data.keys
-      }
-    } catch {
-      previewKeys.value = []
+  if (importMethod.value === 'text') {
+    previewKeys.value = parseTextInput(newText)
+  }
+})
+
+// 监听导入方法变化，清空相关数据
+watch(importMethod, (newMethod) => {
+  previewKeys.value = []
+  if (newMethod === 'text') {
+    // 切换到文本方式时，重新解析文本
+    previewKeys.value = parseTextInput(importText.value)
+  } else if (newMethod === 'file') {
+    // 切换到文件方式时，清除文件选择
+    if (fileInput.value) {
+      fileInput.value.value = ''
     }
   }
 })
