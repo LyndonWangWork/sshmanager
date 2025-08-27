@@ -72,6 +72,10 @@ const zh = {
       securityTip: {
         title: '安全提示',
         content: '密码保护可以防止私钥文件被盗用。即使文件被获取，没有密码也无法使用。'
+      },
+      realKeyGeneration: {
+        title: '真实密钥生成',
+        content: '本应用现在使用真实的密码学算法生成SSH密钥，生成的密钥可以直接用于SSH登录和认证。'
       }
     },
     generate: {
@@ -401,6 +405,10 @@ const en = {
       securityTip: {
         title: 'Security Tip',
         content: 'Passphrase protection prevents private key misuse. Even if the file is stolen, it cannot be used without the passphrase.'
+      },
+      realKeyGeneration: {
+        title: 'Real Key Generation',
+        content: 'This application now uses real cryptographic algorithms to generate SSH keys that can be directly used for SSH login and authentication.'
       }
     },
     generate: {

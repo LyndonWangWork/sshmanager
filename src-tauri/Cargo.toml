@@ -28,6 +28,9 @@ chrono = { version = "0.4", features = ["serde"] }
 thiserror = "1.0"
 dirs = "4.0"
 rand = "0.8"
+rand_core = "0.6"
 sha2 = "0.10"
 base64 = "0.21"
-
+# 密码学依赖
+ring = "0.17.14"
+rsa = "0.9"
