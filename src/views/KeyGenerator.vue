@@ -1,8 +1,41 @@
 <template>
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-    <!-- 左侧：参数配置 -->
-    <div class="space-y-6">
-      <!-- 基本信息 -->
+  <div class="space-y-6">
+    <!-- 修复生成按钮样式问题 -->
+    <div class="flex justify-center py-4">
+      <BaseButton 
+        type="submit" 
+        :disabled="isGenerating || !isFormValid" 
+        class="relative overflow-hidden group px-8 py-3"
+        :class="{
+          'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white': !isGenerating && isFormValid,
+          'bg-gray-300 text-gray-500 cursor-not-allowed': isGenerating || !isFormValid,
+          'transform hover:translate-y-[-1px] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]': !isGenerating && isFormValid,
+          'shadow-lg hover:shadow-xl': !isGenerating && isFormValid
+        }"
+        @click="generateKey">
+        <!-- 光扫动画效果 -->
+        <div v-if="!isGenerating && isFormValid" class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out"></div>
+        
+        <span v-if="isGenerating" class="flex items-center relative z-10">
+          <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
+            viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+            </path>
+          </svg>
+          {{ $t('keyGenerator.generate.generating') }}
+        </span>
+        <span v-else class="flex items-center justify-center relative z-10">
+          <KeyIcon class="h-5 w-5 mr-2" />
+          {{ $t('keyGenerator.generate.button') }}
+        </span>
+      </BaseButton>
+    </div>
+
+    <!-- 密钥信息、密钥类型、高级选项放在同一行 -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- 左侧：基本信息 -->
       <div class="bg-white rounded-lg shadow-sm p-6">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('keyGenerator.keyInfo.title') }}</h2>
 
@@ -13,7 +46,7 @@
         </form>
       </div>
 
-      <!-- 密钥类型配置 -->
+      <!-- 中间：密钥类型 -->
       <div class="bg-white rounded-lg shadow-sm p-6">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('keyGenerator.keyType.title') }}</h2>
 
@@ -55,7 +88,7 @@
         </div>
       </div>
 
-      <!-- 高级选项 -->
+      <!-- 右侧：高级选项 -->
       <div class="bg-white rounded-lg shadow-sm p-6">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('keyGenerator.advancedOptions.title') }}</h2>
 
@@ -114,27 +147,9 @@
           </div>
         </div>
       </div>
-
-      <!-- 生成按钮 -->
-      <BaseButton type="submit" :disabled="isGenerating || !isFormValid" class="w-full" @click="generateKey">
-        <span v-if="isGenerating" class="flex items-center">
-          <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
-            viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-            </path>
-          </svg>
-          {{ $t('keyGenerator.generate.generating') }}
-        </span>
-        <span v-else class="flex items-center">
-          <KeyIcon class="h-5 w-5 mr-2" />
-          {{ $t('keyGenerator.generate.button') }}
-        </span>
-      </BaseButton>
     </div>
 
-    <!-- 右侧：生成结果 -->
+    <!-- 生成结果（下方占据整行） -->
     <div class="space-y-6">
       <!-- 进度显示 -->
       <div v-if="isGenerating" class="bg-white rounded-lg shadow-sm p-6">
