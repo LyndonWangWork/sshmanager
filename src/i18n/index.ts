@@ -52,7 +52,7 @@ const zh = {
       name: '密钥名称',
       namePlaceholder: '例如：github-work',
       comment: '注释 (可选)',
-      commentPlaceholder: '例如：user@hostname'
+      commentPlaceholder: '例如：user{\'@\'}hostname'
     },
     keyType: {
       title: '密钥类型',
@@ -389,7 +389,7 @@ const en = {
       name: 'Key Name',
       namePlaceholder: 'e.g., github-work',
       comment: 'Comment (Optional)',
-      commentPlaceholder: 'e.g., user@hostname'
+      commentPlaceholder: 'e.g., user{\'@\'}hostname'
     },
     keyType: {
       title: 'Key Type',
