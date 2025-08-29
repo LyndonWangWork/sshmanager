@@ -2,7 +2,6 @@ use tauri::State;
 use std::sync::Mutex;
 use crate::services::{CryptoService, SshKeyService};
 use crate::types::{SshKeyPair, KeyGenerationParams};
-use crate::error::{AppError, AppResult};
 use crate::storage::StorageService;
 
 type CryptoState<'a> = State<'a, Mutex<CryptoService>>;
@@ -29,9 +28,16 @@ pub async fn initialize_app(
     let salt = CryptoService::generate_salt();
     
     // 设置主密钥
-    crypto.set_master_key(&master_key, &salt);
+    crypto.set_salt(salt);
+    let master_key_hash = CryptoService::hash_password(&master_key, &salt);
+    crypto.set_master_key_hash(master_key_hash.clone());
     
-    // 创建初始存储
+    // 验证密码设置成功
+    if !crypto.verify_password(&master_key) {
+        return Err("密码验证失败".to_string());
+    }
+    
+    // 创建初始存储（注意：不将master_key_hash和salt存储在加密数据中）
     let initial_data = serde_json::json!({
         "keys": [],
         "config": {
@@ -47,34 +53,37 @@ pub async fn initialize_app(
     let encrypted = crypto.encrypt(initial_data.to_string().as_bytes())
         .map_err(|e| e.to_string())?;
     
-    // 保存到本地文件
-    storage.save_encrypted_data(&encrypted, &salt).map_err(|e| e.to_string())?;
+    // 保存到本地文件（master_key_hash和salt作为元数据存储）
+    storage.save_encrypted_data(&encrypted, &salt, &master_key_hash).map_err(|e| e.to_string())?;
     
     Ok(true)
 }
 
-// 用户认证
-#[tauri::command]
-pub async fn authenticate(
-    master_key: String,
-    crypto_state: CryptoState<'_>,
-    storage_state: StorageState<'_>,
-) -> Result<bool, String> {
-    let mut crypto = crypto_state.lock().map_err(|e| e.to_string())?;
-    let storage = storage_state.lock().map_err(|e| e.to_string())?;
-    
-    // 加载存储文件
-    let (encrypted_data, salt) = storage.load_encrypted_data().map_err(|e| e.to_string())?;
-    
-    // 设置主密钥
-    crypto.set_master_key(&master_key, &salt);
-    
-    // 尝试解密来验证密码
-    match crypto.decrypt(&encrypted_data) {
-        Ok(_) => Ok(true),
-        Err(_) => Ok(false),
+    // 用户认证
+    #[tauri::command]
+    pub async fn authenticate(
+        master_key: String,
+        crypto_state: CryptoState<'_>,
+        storage_state: StorageState<'_>,
+    ) -> Result<bool, String> {
+        let mut crypto = crypto_state.lock().map_err(|e| e.to_string())?;
+        let storage = storage_state.lock().map_err(|e| e.to_string())?;
+        
+        // 加载存储文件
+        let (_encrypted_data, _salt_vec, stored_hash, salt) = storage.load_encrypted_data().map_err(|e| e.to_string())?;
+        
+        // 设置盐值和存储的主密码哈希
+        crypto.set_salt(salt);
+        crypto.set_master_key_hash(stored_hash.clone());
+        
+        // 使用存储的盐值验证输入的密码
+        let input_hash = CryptoService::hash_password(&master_key, &salt);
+        
+        // 验证密码
+        let is_valid = input_hash == stored_hash;
+        
+        Ok(is_valid)
     }
-}
 
 // 生成SSH密钥
 #[tauri::command]
@@ -326,6 +335,62 @@ pub async fn export_keys_to_file(
     
     Ok(true)
 }
+
+    // 重置所有数据
+    #[tauri::command]
+    pub async fn reset_all_data(
+        crypto_state: CryptoState<'_>,
+        storage_state: StorageState<'_>,
+    ) -> Result<bool, String> {
+        let mut crypto = crypto_state.lock().map_err(|e| e.to_string())?;
+        let mut storage = storage_state.lock().map_err(|e| e.to_string())?;
+        
+        // 清除加密服务中的主密钥
+        crypto.clear_master_key();
+        
+        // 清除存储服务中的所有数据
+        storage.reset_storage().map_err(|e| e.to_string())?;
+        
+        // 生成新的盐值
+        let salt = CryptoService::generate_salt();
+        
+        // 创建默认配置
+        let default_config = serde_json::json!({
+            "theme": "light",
+            "auto_backup": true,
+            "backup_retention": 10,
+            "default_key_type": "Ed25519",
+            "default_key_size": 256
+        });
+        
+        // 创建初始数据
+        let initial_data = serde_json::json!({
+            "keys": [],
+            "config": default_config
+        });
+        
+        // 不使用加密服务加密，而是直接创建未加密的初始数据结构
+        let storage_data = crate::types::EncryptedStorage {
+            version: "1.0".to_string(),
+            salt: salt.to_vec(),
+            master_key_hash: "".to_string(),
+            iv: vec![], // 空的初始化向量
+            encrypted_data: initial_data.to_string().as_bytes().to_vec(), // 直接存储数据
+            checksum: "".to_string(), // 空校验和
+            data: serde_json::Map::new(), // 空的data字段
+        };
+        
+        // 直接保存到存储，不使用加密服务
+        let serialized = serde_json::to_string(&storage_data).map_err(|e| e.to_string())?;
+        std::fs::write(&storage.storage_path(), serialized).map_err(|e| e.to_string())?;
+        
+        // 设置默认认证状态
+        crypto.set_master_key_hash("".to_string());
+        crypto.set_salt(salt);
+        
+        Ok(true)
+    }
+
 #[tauri::command]
 pub async fn export_all_keys(
     crypto_state: CryptoState<'_>,
@@ -360,7 +425,7 @@ async fn load_and_decrypt_data(
     let crypto = crypto_state.lock().map_err(|e| e.to_string())?;
     let storage = storage_state.lock().map_err(|e| e.to_string())?;
     
-    let (encrypted_data, _) = storage.load_encrypted_data().map_err(|e| e.to_string())?;
+    let (encrypted_data, _salt_vec, _stored_hash, _salt) = storage.load_encrypted_data().map_err(|e| e.to_string())?;
     
     let decrypted = crypto.decrypt(&encrypted_data).map_err(|e| e.to_string())?;
     let data_str = String::from_utf8(decrypted).map_err(|e| e.to_string())?;
@@ -379,8 +444,9 @@ async fn save_encrypted_data(
     
     let encrypted = crypto.encrypt(data_str.as_bytes()).map_err(|e| e.to_string())?;
     let salt = CryptoService::generate_salt(); // 在实际实现中应使用现有盐值
+    let master_key_hash = crypto.get_master_key_hash().unwrap_or_default();
     
-    storage.save_encrypted_data(&encrypted, &salt).map_err(|e| e.to_string())
+    storage.save_encrypted_data(&encrypted, &salt, &master_key_hash).map_err(|e| e.to_string())
 }
 
 // 字符串格式化测试

@@ -1,3 +1,88 @@
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { useAuthStore } from '@/stores/auth'
+import BaseButton from '@/components/BaseButton.vue'
+import BaseInput from '@/components/BaseInput.vue'
+import LanguageSelector from '@/components/LanguageSelector.vue'
+import { KeyIcon } from '@heroicons/vue/24/outline'
+
+const router = useRouter()
+const route = useRoute()
+const authStore = useAuthStore()
+const { t } = useI18n()
+
+const password = ref('')
+const confirmPassword = ref('')
+const error = ref('')
+const passwordError = ref('')
+const confirmPasswordError = ref('')
+
+const isSetupMode = computed(() => route.query.mode === 'setup')
+// 直接获取安全提示数组
+const securityTips = [
+  t('auth.securityTips.items.0'),
+  t('auth.securityTips.items.1'),
+  t('auth.securityTips.items.2')
+]
+
+onMounted(async () => {
+  // 检查初始化状态
+  try {
+    const initialized = await authStore.checkInitialization()
+    if (!initialized && route.query.mode !== 'setup') {
+      router.push({ name: 'Auth', query: { mode: 'setup' } })
+    }
+  } catch (err) {
+    console.error('检查初始化状态失败:', err)
+  }
+})
+
+const validateForm = (): boolean => {
+  passwordError.value = ''
+  confirmPasswordError.value = ''
+  error.value = ''
+  
+  if (password.value.length < 8) {
+    passwordError.value = t('auth.errors.passwordLength')
+    return false
+  }
+  
+  if (isSetupMode.value && password.value !== confirmPassword.value) {
+    confirmPasswordError.value = t('auth.errors.passwordMismatch')
+    return false
+  }
+  
+  return true
+}
+
+const handleSubmit = async () => {
+  if (!validateForm()) {
+    return
+  }
+  
+  try {
+    let success = false
+    
+    if (isSetupMode.value) {
+      success = await authStore.initializeApp(password.value)
+    } else {
+      success = await authStore.login(password.value)
+    }
+    
+    if (success) {
+      router.push({ name: 'Dashboard' })
+    } else {
+      error.value = isSetupMode.value ? t('auth.errors.initializationFailed') : t('auth.errors.wrongPassword')
+    }
+  } catch (err) {
+    error.value = t('auth.errors.operationFailed')
+    console.error('认证失败:', err)
+  }
+}
+</script>
+
 <template>
   <div class="min-h-screen flex items-center justify-center bg-transparent relative overflow-hidden">
     <!-- 背景装饰 -->
@@ -62,7 +147,7 @@
                   <h3 class="text-sm font-semibold text-warning-800 mb-2">{{ $t('auth.securityTips.title') }}</h3>
                   <div class="text-sm text-warning-700">
                     <ul class="list-disc list-inside space-y-1">
-                      <li v-for="tip in $t('auth.securityTips.items')" :key="tip">{{ tip }}</li>
+                      <li v-for="(tip, index) in securityTips" :key="index">{{ tip }}</li>
                     </ul>
                   </div>
                 </div>
@@ -100,82 +185,3 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-import { useAuthStore } from '@/stores/auth'
-import BaseButton from '@/components/BaseButton.vue'
-import BaseInput from '@/components/BaseInput.vue'
-import LanguageSelector from '@/components/LanguageSelector.vue'
-import { KeyIcon } from '@heroicons/vue/24/outline'
-
-const router = useRouter()
-const route = useRoute()
-const authStore = useAuthStore()
-const { t } = useI18n()
-
-const password = ref('')
-const confirmPassword = ref('')
-const error = ref('')
-const passwordError = ref('')
-const confirmPasswordError = ref('')
-
-const isSetupMode = computed(() => route.query.mode === 'setup')
-
-onMounted(async () => {
-  // 检查初始化状态
-  try {
-    const initialized = await authStore.checkInitialization()
-    if (!initialized && route.query.mode !== 'setup') {
-      router.push({ name: 'Auth', query: { mode: 'setup' } })
-    }
-  } catch (err) {
-    console.error('检查初始化状态失败:', err)
-  }
-})
-
-const validateForm = (): boolean => {
-  passwordError.value = ''
-  confirmPasswordError.value = ''
-  error.value = ''
-  
-  if (password.value.length < 8) {
-    passwordError.value = t('auth.errors.passwordLength')
-    return false
-  }
-  
-  if (isSetupMode.value && password.value !== confirmPassword.value) {
-    confirmPasswordError.value = t('auth.errors.passwordMismatch')
-    return false
-  }
-  
-  return true
-}
-
-const handleSubmit = async () => {
-  if (!validateForm()) {
-    return
-  }
-  
-  try {
-    let success = false
-    
-    if (isSetupMode.value) {
-      success = await authStore.initializeApp(password.value)
-    } else {
-      success = await authStore.login(password.value)
-    }
-    
-    if (success) {
-      router.push({ name: 'Dashboard' })
-    } else {
-      error.value = isSetupMode.value ? t('auth.errors.initializationFailed') : t('auth.errors.wrongPassword')
-    }
-  } catch (err) {
-    error.value = t('auth.errors.operationFailed')
-    console.error('认证失败:', err)
-  }
-}
-</script>

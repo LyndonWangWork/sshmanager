@@ -12,6 +12,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       isLoading.value = true
       const result = await invoke<boolean>('is_initialized')
+      console.log('应用已初始化:', result)
       isInitialized.value = result
       return result
     } catch (error) {
@@ -60,6 +61,13 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated.value = false
   }
   
+  // 重置认证状态
+  const reset = () => {
+    isAuthenticated.value = false
+    isInitialized.value = false
+    isLoading.value = false
+  }
+  
   return {
     // State
     isAuthenticated: computed(() => isAuthenticated.value),
@@ -71,5 +79,6 @@ export const useAuthStore = defineStore('auth', () => {
     initializeApp,
     login,
     logout,
+    reset,
   }
 })

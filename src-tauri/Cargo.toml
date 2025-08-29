@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
+default-run = "ssh-key-manager"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -34,3 +35,4 @@ base64 = "0.21"
 # 密码学依赖
 ring = "0.17.14"
 rsa = "0.9"
+

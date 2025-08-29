@@ -1,8 +1,8 @@
-mod commands;
-mod services;
-mod types;
-mod error;
-mod storage;
+pub mod commands;
+pub mod services;
+pub mod types;
+pub mod error;
+pub mod storage;
 
 #[cfg(test)]
 mod tests;
@@ -31,6 +31,7 @@ pub fn run() {
             write_file_content,
             import_keys,
             export_all_keys,
+            reset_all_data,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

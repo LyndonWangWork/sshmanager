@@ -3,13 +3,15 @@ use crate::error::{AppError, AppResult};
 use rand::RngCore;
 
 pub struct CryptoService {
-    is_authenticated: bool,
+    master_key_hash: Option<String>,
+    salt: Option<[u8; 32]>,
 }
 
 impl CryptoService {
     pub fn new() -> Self {
         Self { 
-            is_authenticated: false 
+            master_key_hash: None,
+            salt: None,
         }
     }
     
@@ -21,14 +23,45 @@ impl CryptoService {
         format!("{:x}", hasher.finalize())
     }
     
-    // 设置主密钥（简化版）
-    pub fn set_master_key(&mut self, _password: &str, _salt: &[u8]) {
-        self.is_authenticated = true;
+    // 设置主密码哈希
+    pub fn set_master_key_hash(&mut self, hash: String) {
+        self.master_key_hash = Some(hash);
+    }
+    
+    // 设置盐值
+    pub fn set_salt(&mut self, salt: [u8; 32]) {
+        self.salt = Some(salt);
+    }
+    
+    // 清除主密钥
+    pub fn clear_master_key(&mut self) {
+        self.master_key_hash = None;
+        self.salt = None;
+    }
+
+    // 获取主密码哈希
+    pub fn get_master_key_hash(&self) -> Option<String> {
+        self.master_key_hash.clone()
+    }
+
+    // 验证密码
+    pub fn verify_password(&self, password: &str) -> bool {
+        if let (Some(hash), Some(salt)) = (&self.master_key_hash, &self.salt) {
+            let input_hash = Self::hash_password(password, salt);
+            &input_hash == hash
+        } else {
+            false
+        }
+    }
+    
+    // 检查是否已认证
+    pub fn is_authenticated(&self) -> bool {
+        self.master_key_hash.is_some()
     }
     
     // 加密数据（模拟）
     pub fn encrypt(&self, data: &[u8]) -> AppResult<EncryptedData> {
-        if !self.is_authenticated {
+        if !self.is_authenticated() {
             return Err(AppError::Unknown("主密钥未设置".to_string()));
         }
         
@@ -44,7 +77,7 @@ impl CryptoService {
     
     // 解密数据（模拟）
     pub fn decrypt(&self, encrypted: &EncryptedData) -> AppResult<Vec<u8>> {
-        if !self.is_authenticated {
+        if !self.is_authenticated() {
             return Err(AppError::Unknown("主密钥未设置".to_string()));
         }
         

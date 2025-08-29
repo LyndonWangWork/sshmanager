@@ -103,6 +103,12 @@ export const useKeyStore = defineStore('key', () => {
     selectedKeyId.value = id
   }
   
+  // 清除所有密钥
+  const clearKeys = () => {
+    keys.value = []
+    selectedKeyId.value = null
+  }
+  
   return {
     // State
     keys: computed(() => keys.value),
@@ -117,5 +123,6 @@ export const useKeyStore = defineStore('key', () => {
     importKeys,
     exportAllKeys,
     setSelectedKey,
+    clearKeys,
   }
 })
