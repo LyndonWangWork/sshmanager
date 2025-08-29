@@ -339,11 +339,30 @@ pub async fn export_keys_to_file(
     // 重置所有数据
     #[tauri::command]
     pub async fn reset_all_data(
+        master_key: String,
         crypto_state: CryptoState<'_>,
         storage_state: StorageState<'_>,
     ) -> Result<bool, String> {
         let mut crypto = crypto_state.lock().map_err(|e| e.to_string())?;
         let mut storage = storage_state.lock().map_err(|e| e.to_string())?;
+        
+        // 首先验证密码
+        // 加载存储文件
+        let (_encrypted_data, _salt_vec, stored_hash, salt) = storage.load_encrypted_data().map_err(|e| e.to_string())?;
+        
+        // 设置盐值和存储的主密码哈希
+        crypto.set_salt(salt);
+        crypto.set_master_key_hash(stored_hash.clone());
+        
+        // 使用存储的盐值验证输入的密码
+        let input_hash = CryptoService::hash_password(&master_key, &salt);
+        
+        // 验证密码
+        let is_valid = input_hash == stored_hash;
+        
+        if !is_valid {
+            return Ok(false);
+        }
         
         // 清除加密服务中的主密钥
         crypto.clear_master_key();

@@ -53,7 +53,7 @@
       <p class="text-gray-600 mb-4">{{ $t('settings.reset.description') }}</p>
       <button
         class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
-        @click="showResetConfirm = true"
+        @click="confirmReset"
       >
         {{ $t('settings.reset.button') }}
       </button>
@@ -85,6 +85,23 @@
                   {{ $t('settings.reset.confirm') }}
                 </p>
               </div>
+              
+              <!-- 密码输入框 -->
+              <div class="mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  {{ $t('auth.masterPassword') }}
+                </label>
+                <input
+                  v-model="resetPassword"
+                  type="password"
+                  :placeholder="$t('auth.loginPlaceholder')"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  :class="{ 'border-red-500': resetPasswordError }"
+                />
+                <p v-if="resetPasswordError" class="mt-1 text-sm text-red-600">
+                  {{ resetPasswordError }}
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -92,7 +109,7 @@
           <button
             type="button"
             class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm"
-            @click="confirmReset"
+            @click="resetAllData"
           >
             {{ $t('settings.reset.button') }}
           </button>
@@ -125,6 +142,9 @@ const { locale: i18nLocale, t: $t } = useI18n()
 
 // 显示确认对话框
 const showResetConfirm = ref(false)
+// 密码输入
+const resetPassword = ref('')
+const resetPasswordError = ref('')
 
 // 切换语言
 const handleLanguageChange = (locale: string) => {
@@ -134,27 +154,62 @@ const handleLanguageChange = (locale: string) => {
   i18nLocale.value = locale
 }
 
+// 验证重置密码
+const validateResetPassword = (): boolean => {
+  resetPasswordError.value = ''
+  
+  if (resetPassword.value.length < 8) {
+    resetPasswordError.value = $t('auth.errors.passwordLength')
+    return false
+  }
+  
+  return true
+}
+
 // 重置所有数据
 const resetAllData = async () => {
-  // 重置语言
-  languageStore.resetLanguage()
+  if (!validateResetPassword()) {
+    return
+  }
   
-  // 重置认证状态
-  authStore.reset()
-  
-  // 清除所有密钥
-  keyStore.clearKeys()
-  
-  // 调用Tauri命令清除本地存储
-  await invoke('reset_all_data')
+  try {
+    // 调用Tauri命令验证密码并重置数据
+    const result = await invoke('reset_all_data', { masterKey: resetPassword.value })
+    
+    if (result) {
+      // 重置语言
+      languageStore.resetLanguage()
+      
+      // 重置认证状态
+      authStore.reset()
+      
+      // 清除所有密钥
+      keyStore.clearKeys()
+      
+      // 关闭确认对话框
+      showResetConfirm.value = false
+      
+      // 清空密码输入
+      resetPassword.value = ''
+      
+      // 显示成功提示
+      alert($t('settings.reset.success'))
+    } else {
+      resetPasswordError.value = $t('auth.errors.wrongPassword')
+    }
+  } catch (error) {
+    resetPasswordError.value = $t('auth.errors.operationFailed')
+    console.error('重置失败:', error)
+  }
 }
 
 // 确认重置
 const confirmReset = async () => {
-  showResetConfirm.value = false
-  await resetAllData()
-  
-  // 显示成功提示
-  alert($t('settings.reset.success'))
+  // 显示确认对话框，让用户输入密码
+  showResetConfirm.value = true
+  // 清空之前的错误信息
+  resetPasswordError.value = ''
+  // 清空密码输入
+  resetPassword.value = ''
 }
 </script>
