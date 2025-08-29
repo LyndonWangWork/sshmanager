@@ -289,14 +289,18 @@ const zh = {
   settings: {
     title: '设置',
     appSettings: '应用设置',
+    developing: '功能开发中',
     language: {
       title: '语言设置',
-      current: '当前语言',
-      select: '选择语言',
-      chinese: '中文',
-      english: 'English'
+      select: '选择语言'
     },
-    developing: '设置功能正在开发中...'
+    reset: {
+      title: '重置应用',
+      description: '清除所有数据，包括主密码、所有密钥和当前语言设置。此操作无法撤销。',
+      button: '重置应用',
+      success: '数据已成功重置',
+      confirm: '确定要重置应用吗？所有数据将被清除，包括主密码、所有密钥和当前语言设置。此操作无法撤销。'
+    }
   },
   auth: {
     setup: {
@@ -352,12 +356,12 @@ const en = {
     warning: 'Warning',
     info: 'Info',
     file: 'File',
-    line: 'line'
+    line: 'Line'
   },
   nav: {
     dashboard: 'Dashboard',
     keyManager: 'Key Manager',
-    keyGenerator: 'Key Generator',
+    keyGenerator: 'Generate Key',
     configEditor: 'Config Editor',
     settings: 'Settings',
     logout: 'Logout'
@@ -622,14 +626,18 @@ const en = {
   settings: {
     title: 'Settings',
     appSettings: 'Application Settings',
+    developing: 'Feature under development',
     language: {
       title: 'Language Settings',
-      current: 'Current Language',
-      select: 'Select Language',
-      chinese: '中文',
-      english: 'English'
+      select: 'Select Language'
     },
-    developing: 'Settings functionality is under development...'
+    reset: {
+      title: 'Reset Application',
+      description: 'Clear all data, including the master password, all keys, and current language settings. This action cannot be undone.',
+      button: 'Reset Application',
+      success: 'Data has been successfully reset',
+      confirm: 'Are you sure you want to reset the application? All data will be cleared, including the master password, all keys, and current language settings. This action cannot be undone.'
+    }
   },
   auth: {
     setup: {
