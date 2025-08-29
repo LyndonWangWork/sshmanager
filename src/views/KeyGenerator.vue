@@ -40,9 +40,21 @@
         <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('keyGenerator.keyInfo.title') }}</h2>
 
         <form @submit.prevent="generateKey" class="space-y-4">
-          <BaseInput v-model="keyParams.name" :label="$t('keyGenerator.keyInfo.name')" required :placeholder="$t('keyGenerator.keyInfo.namePlaceholder')" :error="errors.name" />
+          <BaseInput 
+            v-model="keyParams.name" 
+            :label="$t('keyGenerator.keyInfo.name')" 
+            required 
+            :placeholder="$t('keyGenerator.keyInfo.namePlaceholder')" 
+            :error="errors.name" 
+            show-clear-button
+          />
 
-          <BaseInput v-model="keyParams.comment" :label="$t('keyGenerator.keyInfo.comment')" :placeholder="$t('keyGenerator.keyInfo.commentPlaceholder')" />
+          <BaseInput 
+            v-model="keyParams.comment" 
+            :label="$t('keyGenerator.keyInfo.comment')" 
+            :placeholder="$t('keyGenerator.keyInfo.commentPlaceholder')" 
+            show-clear-button
+          />
         </form>
       </div>
 
@@ -120,11 +132,24 @@
             </label>
 
             <div v-if="advancedOptions.usePassphrase" class="ml-6 space-y-3">
-              <BaseInput v-model="keyParams.passphrase" :label="$t('keyGenerator.advancedOptions.passphrase')" type="password" :placeholder="$t('keyGenerator.advancedOptions.passphrasePlaceholder')"
-                :error="errors.passphrase" :hint="$t('keyGenerator.advancedOptions.passphraseHint')" />
+              <BaseInput 
+                v-model="keyParams.passphrase" 
+                :label="$t('keyGenerator.advancedOptions.passphrase')" 
+                type="password" 
+                :placeholder="$t('keyGenerator.advancedOptions.passphrasePlaceholder')"
+                :error="errors.passphrase" 
+                :hint="$t('keyGenerator.advancedOptions.passphraseHint')" 
+                show-clear-button
+              />
 
-              <BaseInput v-model="passphraseConfirm" :label="$t('keyGenerator.advancedOptions.confirmPassphrase')" type="password" :placeholder="$t('keyGenerator.advancedOptions.confirmPassphrasePlaceholder')"
-                :error="errors.passphraseConfirm" />
+              <BaseInput 
+                v-model="passphraseConfirm" 
+                :label="$t('keyGenerator.advancedOptions.confirmPassphrase')" 
+                type="password" 
+                :placeholder="$t('keyGenerator.advancedOptions.confirmPassphrasePlaceholder')"
+                :error="errors.passphraseConfirm" 
+                show-clear-button
+              />
 
               <div class="bg-blue-50 border border-blue-200 rounded-md p-3">
                 <div class="flex">

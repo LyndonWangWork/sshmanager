@@ -29,8 +29,21 @@
         :readonly="readonly"
       />
       
+      <!-- 清除按钮 -->
+      <button
+        v-if="showClearButton && modelValue && !disabled && !readonly"
+        @click="clearInput"
+        type="button"
+        class="absolute inset-y-0 right-0 pr-3 flex items-center"
+        :class="{ 'pr-10': suffixIcon || loading }"
+      >
+        <svg class="h-5 w-5 text-tech-400 hover:text-tech-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      
       <!-- 后置图标 -->
-      <div v-if="suffixIcon" class="absolute inset-y-0 right-0 pr-3 flex items-center">
+      <div v-if="suffixIcon && !showClearButton" class="absolute inset-y-0 right-0 pr-3 flex items-center">
         <component :is="suffixIcon" class="h-5 w-5 text-tech-400" />
       </div>
       
@@ -73,6 +86,7 @@ interface Props {
   prefixIcon?: Component
   suffixIcon?: Component
   size?: 'sm' | 'md' | 'lg'
+  showClearButton?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -82,6 +96,7 @@ const props = withDefaults(defineProps<Props>(), {
   readonly: false,
   loading: false,
   size: 'md',
+  showClearButton: true
 })
 
 const emit = defineEmits<{
@@ -106,6 +121,10 @@ const updateValue = (event: Event) => {
   }
 }
 
+const clearInput = () => {
+  emit('update:modelValue', props.type === 'number' ? 0 : '')
+}
+
 const inputClasses = computed(() => {
   const baseClasses = 'input transition-all duration-300'
   const sizeClasses = {
@@ -121,8 +140,8 @@ const inputClasses = computed(() => {
     classes.push('pl-10')
   }
   
-  // 后置图标或加载状态时增加右内边距
-  if (props.suffixIcon || props.loading) {
+  // 后置图标、加载状态或清除按钮时增加右内边距
+  if (props.suffixIcon || props.loading || props.showClearButton) {
     classes.push('pr-10')
   }
   
@@ -143,3 +162,4 @@ const inputClasses = computed(() => {
   return classes.join(' ')
 })
 </script>
+```
