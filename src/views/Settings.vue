@@ -120,6 +120,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useKeyStore } from '@/stores/key'
 import { ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
+import { relaunch } from '@tauri-apps/plugin-process'
 
 const languageStore = useLanguageStore()
 const authStore = useAuthStore()
@@ -181,6 +182,9 @@ const resetAllData = async () => {
 
       // 显示成功提示
       alert($t('settings.reset.success'))
+
+      // 重启应用程序
+      await relaunch()
     } else {
       resetPasswordError.value = $t('auth.errors.wrongPassword')
     }

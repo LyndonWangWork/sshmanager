@@ -17,6 +17,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_process::init())
         .manage(Mutex::new(CryptoService::new()))
         .manage(Mutex::new(StorageService::new().expect("存储服务初始化失败")))
         .invoke_handler(tauri::generate_handler![
