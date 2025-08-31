@@ -9,36 +9,45 @@ mod tests {
     }
 
     #[test]
-    fn test_hash_password() {
+    fn test_derive_key() {
         let password = "test_password";
         let salt = [0u8; 32];
         
-        let hash1 = CryptoService::hash_password(password, &salt);
-        let hash2 = CryptoService::hash_password(password, &salt);
+        let key1 = CryptoService::derive_key(password, &salt);
+        let key2 = CryptoService::derive_key(password, &salt);
         
-        assert_eq!(hash1, hash2);
+        assert_eq!(key1, key2);
     }
 
     #[test]
-    fn test_hash_password_different_salts() {
+    fn test_derive_key_different_salts() {
         let password = "test_password";
         let salt1 = [1u8; 32];
         let salt2 = [2u8; 32];
         
-        let hash1 = CryptoService::hash_password(password, &salt1);
-        let hash2 = CryptoService::hash_password(password, &salt2);
+        let key1 = CryptoService::derive_key(password, &salt1);
+        let key2 = CryptoService::derive_key(password, &salt2);
         
-        assert_ne!(hash1, hash2);
+        assert_ne!(key1, key2);
+    }
+
+    #[test]
+    fn test_set_master_key() {
+        let mut crypto_service = CryptoService::new();
+        let password = "test_password";
+        
+        let result = crypto_service.set_master_key(password);
+        assert!(result.is_ok());
+        assert!(crypto_service.is_authenticated());
+        assert!(crypto_service.get_salt().is_some());
+        assert!(crypto_service.get_master_key_hash().is_some());
     }
 
     #[test]
     fn test_encrypt_decrypt() {
         let mut crypto_service = CryptoService::new();
-        // Set up the service with a master key hash to enable encryption
-        let salt = [0u8; 32];
-        let master_key_hash = CryptoService::hash_password("test_key", &salt);
-        crypto_service.set_master_key_hash(master_key_hash);
-        crypto_service.set_salt(salt);
+        let password = "test_password";
+        crypto_service.set_master_key(password).unwrap();
         
         let data = "test data to encrypt";
         
@@ -53,26 +62,18 @@ mod tests {
         let mut crypto_service2 = CryptoService::new();
         
         // Set up service 1
-        let salt1 = [1u8; 32];
-        let master_key_hash1 = CryptoService::hash_password("key1", &salt1);
-        crypto_service1.set_master_key_hash(master_key_hash1);
-        crypto_service1.set_salt(salt1);
+        crypto_service1.set_master_key("key1").unwrap();
         
-        // Set up service 2 - same master key but different salt
-        let salt2 = [2u8; 32];
-        let master_key_hash2 = CryptoService::hash_password("key1", &salt2); // Same password
-        crypto_service2.set_master_key_hash(master_key_hash2);
-        crypto_service2.set_salt(salt2);
+        // Set up service 2
+        crypto_service2.set_master_key("key2").unwrap();
         
         let data = "test data to encrypt";
         
         let encrypted1 = crypto_service1.encrypt(data.as_bytes()).unwrap();
         let encrypted2 = crypto_service2.encrypt(data.as_bytes()).unwrap();
         
-        // With the current simple XOR implementation, the encrypted data should be the same
-        // because we're using a fixed XOR key (0x42)
-        // In a real implementation, this would be different
-        assert_eq!(encrypted1.ciphertext, encrypted2.ciphertext);
+        // With the new AES-GCM implementation, the encrypted data should be different
+        assert_ne!(encrypted1.ciphertext, encrypted2.ciphertext);
     }
 
     #[test]
@@ -86,21 +87,10 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_random_different_lengths() {
-        // This test is not applicable since generate_salt always generates 32 bytes
-        // We'll keep it for consistency with the original test structure
-        let salt = CryptoService::generate_salt();
-        assert_eq!(salt.len(), 32);
-    }
-
-    #[test]
     fn test_encrypt_empty_string() {
         let mut crypto_service = CryptoService::new();
-        // Set up the service with a master key hash to enable encryption
-        let salt = [0u8; 32];
-        let master_key_hash = CryptoService::hash_password("test_key", &salt);
-        crypto_service.set_master_key_hash(master_key_hash);
-        crypto_service.set_salt(salt);
+        let password = "test_password";
+        crypto_service.set_master_key(password).unwrap();
         
         let data = "";
         
@@ -112,17 +102,35 @@ mod tests {
     #[test]
     fn test_encrypt_large_data() {
         let mut crypto_service = CryptoService::new();
-        // Set up the service with a master key hash to enable encryption
-        let salt = [0u8; 32];
-        let master_key_hash = CryptoService::hash_password("test_key", &salt);
-        crypto_service.set_master_key_hash(master_key_hash);
-        crypto_service.set_salt(salt);
+        let password = "test_password";
+        crypto_service.set_master_key(password).unwrap();
         
         let data = "a".repeat(1000); // 1KB of data
         
         let encrypted = crypto_service.encrypt(data.as_bytes()).unwrap();
         let decrypted = crypto_service.decrypt(&encrypted).unwrap();
         assert_eq!(String::from_utf8(decrypted).unwrap(), data);
+    }
+
+    #[test]
+    fn test_verify_password() {
+        let mut crypto_service = CryptoService::new();
+        let password = "test_password";
+        crypto_service.set_master_key(password).unwrap();
+        
+        assert!(crypto_service.verify_password(password));
+        assert!(!crypto_service.verify_password("wrong_password"));
+    }
+
+    #[test]
+    fn test_clear_master_key() {
+        let mut crypto_service = CryptoService::new();
+        let password = "test_password";
+        crypto_service.set_master_key(password).unwrap();
+        
+        assert!(crypto_service.is_authenticated());
+        crypto_service.clear_master_key();
+        assert!(!crypto_service.is_authenticated());
     }
 
     #[test]

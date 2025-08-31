@@ -21,10 +21,7 @@ mod integration_tests {
 
         // 测试加密私钥
         let mut crypto_service = CryptoService::new();
-        let salt = [0u8; 32];
-        let master_key_hash = CryptoService::hash_password("test_master_password", &salt);
-        crypto_service.set_master_key_hash(master_key_hash);
-        crypto_service.set_salt(salt);
+        crypto_service.set_master_key("test_master_password").unwrap();
         
         let encrypted_private_key = crypto_service.encrypt(key_pair.private_key.as_bytes()).unwrap();
         assert!(encrypted_private_key.ciphertext.len() > 0);

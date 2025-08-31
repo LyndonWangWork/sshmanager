@@ -1,15 +1,7 @@
-// Prevents additional console window on Windows in release, DO NOT REMOVE!!
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-
-fn main() {
-    ssh_key_manager_lib::run()
-}
-
-
 use ssh_key_manager_lib::services::CryptoService;
 
-fn test() {
-    println!("=== 密码加密增强演示 ===");
+fn main() {
+    println!("=== 密码加密增强测试 ===");
     
     // 测试PBKDF2密钥派生
     println!("\n1. 测试PBKDF2密钥派生:");
@@ -59,5 +51,5 @@ fn test() {
     println!("CryptoService结构体实现了ZeroizeOnDrop特性");
     println!("主密钥在CryptoService实例被丢弃时会自动清零");
     
-    println!("\n=== 演示完成 ===");
+    println!("\n=== 测试完成 ===");
 }

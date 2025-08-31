@@ -24,18 +24,17 @@ pub async fn initialize_app(
     let mut crypto = crypto_state.lock().map_err(|e| e.to_string())?;
     let mut storage = storage_state.lock().map_err(|e| e.to_string())?;
     
-    // 生成随机盐值
-    let salt = CryptoService::generate_salt();
-    
-    // 设置主密钥
-    crypto.set_salt(salt);
-    let master_key_hash = CryptoService::hash_password(&master_key, &salt);
-    crypto.set_master_key_hash(master_key_hash.clone());
+    // 设置主密钥（这会生成盐值和派生密钥）
+    crypto.set_master_key(&master_key).map_err(|e| e.to_string())?;
     
     // 验证密码设置成功
     if !crypto.verify_password(&master_key) {
         return Err("密码验证失败".to_string());
     }
+    
+    // 获取盐值和哈希
+    let salt = crypto.get_salt().unwrap();
+    let master_key_hash = crypto.get_master_key_hash().unwrap();
     
     // 创建初始存储（注意：不将master_key_hash和salt存储在加密数据中）
     let initial_data = serde_json::json!({
@@ -76,11 +75,8 @@ pub async fn initialize_app(
         crypto.set_salt(salt);
         crypto.set_master_key_hash(stored_hash.clone());
         
-        // 使用存储的盐值验证输入的密码
-        let input_hash = CryptoService::hash_password(&master_key, &salt);
-        
         // 验证密码
-        let is_valid = input_hash == stored_hash;
+        let is_valid = crypto.verify_password(&master_key);
         
         Ok(is_valid)
     }
@@ -354,11 +350,8 @@ pub async fn export_keys_to_file(
         crypto.set_salt(salt);
         crypto.set_master_key_hash(stored_hash.clone());
         
-        // 使用存储的盐值验证输入的密码
-        let input_hash = CryptoService::hash_password(&master_key, &salt);
-        
         // 验证密码
-        let is_valid = input_hash == stored_hash;
+        let is_valid = crypto.verify_password(&master_key);
         
         if !is_valid {
             return Ok(false);
@@ -462,8 +455,8 @@ async fn save_encrypted_data(
     let data_str = serde_json::to_string(&data).map_err(|e| e.to_string())?;
     
     let encrypted = crypto.encrypt(data_str.as_bytes()).map_err(|e| e.to_string())?;
-    let salt = CryptoService::generate_salt(); // 在实际实现中应使用现有盐值
-    let master_key_hash = crypto.get_master_key_hash().unwrap_or_default();
+    let salt = crypto.get_salt().ok_or("盐值未设置".to_string())?;
+    let master_key_hash = crypto.get_master_key_hash().ok_or("主密钥哈希未设置".to_string())?;
     
     storage.save_encrypted_data(&encrypted, &salt, &master_key_hash).map_err(|e| e.to_string())
 }
