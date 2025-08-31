@@ -355,7 +355,7 @@
   }
   
   /* 平板端优化 */
-  @media (min-width: 769px) and (max-width: 1024px) {
+  @media (min-width: 769px) and (max-width: 1023px) {
     .sidebar {
       width: 4rem;
     }

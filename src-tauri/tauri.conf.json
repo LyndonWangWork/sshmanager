@@ -16,6 +16,7 @@
         "title": "ssh-key-manager",
         "width": 800,
         "height": 600,
+        "minWidth": 1024,
         "maximized": true
       }
     ],
