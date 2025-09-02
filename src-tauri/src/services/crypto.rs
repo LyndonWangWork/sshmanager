@@ -72,6 +72,11 @@ impl CryptoService {
         self.salt = Some(salt);
     }
     
+    // 直接设置派生的主密钥（用于认证后设置）
+    pub fn set_derived_master_key(&mut self, derived_key: [u8; 32]) {
+        self.master_key = Some(Zeroizing::new(derived_key));
+    }
+    
     // 清除主密钥
     pub fn clear_master_key(&mut self) {
         self.master_key = None;

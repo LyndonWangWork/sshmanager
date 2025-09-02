@@ -78,6 +78,12 @@ pub async fn initialize_app(
         // 验证密码
         let is_valid = crypto.verify_password(&master_key);
         
+        // 如果密码验证成功，设置主密钥（使用已有的盐值派生密钥，而不是生成新的盐值）
+        if is_valid {
+            let derived_key = CryptoService::derive_key(&master_key, &salt);
+            crypto.set_derived_master_key(derived_key);
+        }
+        
         Ok(is_valid)
     }
 
