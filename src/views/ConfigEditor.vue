@@ -139,7 +139,7 @@
                     <div v-for="(option, index) in otherOptionsArray" :key="index" class="flex items-center space-x-2">
                       <input v-model="option.key" @input="updateOptionKey(index, ($event.target as HTMLInputElement).value)"
                         :placeholder="$t('configEditor.hostConfig.optionName')"
-                        class="w-32 min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+                        class="w-1/2 min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
                       <input v-model="option.value"
                         @input="updateOptionValue(index, ($event.target as HTMLInputElement).value)"
                         :placeholder="$t('configEditor.hostConfig.optionValue')"
