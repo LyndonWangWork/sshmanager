@@ -1,6 +1,6 @@
 use tauri::State;
 use std::sync::Mutex;
-use crate::services::{CryptoService, SshKeyService};
+use crate::services::{CryptoService, SshKeyService, SshConfigService};
 use crate::types::{SshKeyPair, KeyGenerationParams};
 use crate::storage::StorageService;
 
@@ -531,4 +531,16 @@ pub async fn write_file_content(
     std::fs::write(&file_path, content)
         .map(|_| true)
         .map_err(|e| format!("文件写入失败: {}", e))
+}
+
+// 保存系统 SSH 配置（带备份与保留）
+#[tauri::command]
+pub async fn save_ssh_config(
+    content: String,
+    file_path: Option<String>,
+    retention: Option<usize>,
+) -> Result<bool, String> {
+    SshConfigService::save_config(&content, file_path.as_deref(), retention)
+        .map(|_| true)
+        .map_err(|e| e.to_string())
 }

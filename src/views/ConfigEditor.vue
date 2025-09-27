@@ -94,8 +94,8 @@
             <div v-else>
               <div v-if="selectedHostIndex >= 0" class="space-y-4">
                 <!-- Host 模式 -->
-                <BaseInput v-model="selectedHost.host_pattern" :label="$t('configEditor.hostConfig.hostPattern')" required
-                  :placeholder="$t('configEditor.hostConfig.hostPatternPlaceholder')"
+                <BaseInput v-model="selectedHost.host_pattern" :label="$t('configEditor.hostConfig.hostPattern')"
+                  required :placeholder="$t('configEditor.hostConfig.hostPatternPlaceholder')"
                   :hint="$t('configEditor.hostConfig.hostPatternHint')" />
 
                 <!-- 主机名 -->
@@ -137,7 +137,8 @@
                   </label>
                   <div class="space-y-2">
                     <div v-for="(option, index) in otherOptionsArray" :key="index" class="flex items-center space-x-2">
-                      <input v-model="option.key" @input="updateOptionKey(index, ($event.target as HTMLInputElement).value)"
+                      <input v-model="option.key"
+                        @input="updateOptionKey(index, ($event.target as HTMLInputElement).value)"
                         :placeholder="$t('configEditor.hostConfig.optionName')"
                         class="w-1/2 min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
                       <input v-model="option.value"
@@ -177,6 +178,7 @@ import { useKeyStore } from '@/stores/key'
 import type { SshConfig, SshHostConfig } from '@/types'
 import BaseButton from '@/components/BaseButton.vue'
 import BaseInput from '@/components/BaseInput.vue'
+import { invoke } from '@tauri-apps/api/core'
 import {
   ArrowLeftIcon,
   ArrowPathIcon,
@@ -313,6 +315,7 @@ const addNewHost = () => {
 
 // 删除主机
 const deleteHost = (index: number) => {
+  debugger
   if (confirm(t('configEditor.hostConfig.deleteConfirm'))) {
     sshConfig.hosts.splice(index, 1)
 
@@ -420,8 +423,9 @@ const saveConfig = async () => {
   isLoading.value = true
 
   try {
-    // TODO: 保存SSH配置到后端
-    console.log('保存配置:', sshConfig)
+    const content = showRawEditor.value ? rawConfigText.value : generatedConfig.value
+    // file_path 可留空使用默认 ~/.ssh/config；保留策略可从应用配置获取，这里先用 10
+    await invoke('save_ssh_config', { content, filePath: undefined, retention: 10 })
     hasChanges.value = false
   } catch (error) {
     console.error(t('configEditor.messages.saveError'), error)
