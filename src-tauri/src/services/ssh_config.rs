@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -5,6 +6,7 @@ use std::path::{Path, PathBuf};
 use chrono::Local;
 
 use crate::error::{AppError, AppResult};
+use crate::types::{SshConfig, SshHostConfig};
 
 pub struct SshConfigService;
 
@@ -38,12 +40,129 @@ impl SshConfigService {
         fs::write(&target_path, content)?;
         Ok(())
     }
+
+    /// 读取 SSH 配置并解析为结构化数据
+    pub fn read_config(file_path: Option<&str>) -> AppResult<SshConfig> {
+        let target_path = match file_path {
+            Some(p) if !p.trim().is_empty() => PathBuf::from(p),
+            _ => default_ssh_config_path()?,
+        };
+
+        // 如果默认路径不存在，尝试 config.txt 作为兼容（Windows 常见）
+        let path_to_read = if !target_path.exists() {
+            let txt = target_path.with_extension("txt");
+            if txt.exists() {
+                txt
+            } else {
+                target_path
+            }
+        } else {
+            target_path
+        };
+
+        let content = if path_to_read.exists() {
+            fs::read_to_string(&path_to_read)?
+        } else {
+            String::new()
+        };
+
+        Ok(parse_openssh_config(&content))
+    }
 }
 
 fn default_ssh_config_path() -> AppResult<PathBuf> {
     let home =
         dirs::home_dir().ok_or_else(|| AppError::ConfigError("无法获取用户主目录".to_string()))?;
     Ok(home.join(".ssh").join("config"))
+}
+
+/// 极简 OpenSSH config 解析器，提取全局设置与 Host 块常见字段
+fn parse_openssh_config(content: &str) -> SshConfig {
+    let mut global_settings: HashMap<String, String> = HashMap::new();
+    let mut hosts: Vec<SshHostConfig> = Vec::new();
+
+    let mut current_host: Option<SshHostConfig> = None;
+
+    for raw_line in content.lines() {
+        let mut line = raw_line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        if line.starts_with('#') {
+            continue;
+        }
+
+        // 去除行内注释（简单处理：按 # 切割）
+        if let Some(idx) = line.find('#') {
+            line = &line[..idx].trim();
+            if line.is_empty() {
+                continue;
+            }
+        }
+
+        // 按空白分割 key 与 value
+        let mut parts = line.split_whitespace();
+        let key = match parts.next() {
+            Some(k) => k,
+            None => continue,
+        };
+        let value = parts.collect::<Vec<_>>().join(" ").trim().to_string();
+        if value.is_empty() {
+            continue;
+        }
+
+        let key_lc = key.to_lowercase();
+        if key_lc == "host" {
+            // 推入上一个 host
+            if let Some(h) = current_host.take() {
+                hosts.push(h);
+            }
+
+            let host_pattern = value; // 允许包含空格（多个模式），此处整体保留
+            current_host = Some(SshHostConfig {
+                host_pattern,
+                hostname: None,
+                user: None,
+                port: None,
+                identity_file: None,
+                other_options: HashMap::new(),
+            });
+            continue;
+        }
+
+        // 普通键值对
+        if let Some(h) = current_host.as_mut() {
+            match key_lc.as_str() {
+                "hostname" => h.hostname = Some(value),
+                "user" => h.user = Some(value),
+                "port" => {
+                    if let Ok(p) = value.parse::<u16>() {
+                        h.port = Some(p);
+                    }
+                }
+                "identityfile" | "identity_file" => h.identity_file = Some(value),
+                _ => {
+                    if !key_lc.is_empty() {
+                        h.other_options.insert(key.to_string(), value);
+                    }
+                }
+            }
+        } else {
+            // 全局设置
+            if !key_lc.is_empty() {
+                global_settings.insert(key.to_string(), value);
+            }
+        }
+    }
+
+    if let Some(h) = current_host.take() {
+        hosts.push(h);
+    }
+
+    SshConfig {
+        hosts,
+        global_settings,
+    }
 }
 
 fn create_backup(target_path: &Path) -> AppResult<PathBuf> {

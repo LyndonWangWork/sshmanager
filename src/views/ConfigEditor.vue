@@ -462,20 +462,10 @@ const loadConfig = async () => {
   isLoading.value = true
 
   try {
-    // TODO: 从后端加载SSH配置
-    // 模拟数据
-    sshConfig.hosts = [
-      {
-        host_pattern: 'github.com',
-        hostname: 'github.com',
-        user: 'git',
-        port: 22,
-        identity_file: '~/.ssh/id_ed25519',
-        other_options: {
-          'PreferredAuthentications': 'publickey'
-        }
-      }
-    ]
+    const result = await invoke<SshConfig>('read_ssh_config', { filePath: undefined })
+    // 将后端返回的数据应用到本地状态
+    sshConfig.hosts = result.hosts as any
+    sshConfig.global_settings = result.global_settings as any
 
     rawConfigText.value = generatedConfig.value
     hasChanges.value = false
