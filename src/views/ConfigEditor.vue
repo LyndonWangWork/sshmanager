@@ -2,7 +2,10 @@
   <div class="container mx-auto px-4 py-8">
     <!-- 页面标题和操作按钮 -->
     <div class="mb-8 flex justify-between items-center">
-      <h1 class="text-2xl font-semibold text-gray-900">{{ $t('configEditor.title') }}</h1>
+      <div>
+        <h1 class="text-2xl font-semibold text-gray-900">{{ $t('configEditor.title') }}</h1>
+        <p class="text-xs text-gray-500 mt-1 break-all" v-if="currentConfigPath">{{ currentConfigPath }}</p>
+      </div>
       <div class="flex items-center space-x-4">
         <BaseButton variant="secondary" @click="loadConfig" :disabled="isLoading">
           <ArrowPathIcon class="h-4 w-4 mr-2" />
@@ -220,8 +223,8 @@ import type { SshConfig, SshHostConfig } from '@/types'
 import BaseButton from '@/components/BaseButton.vue'
 import BaseInput from '@/components/BaseInput.vue'
 import { invoke } from '@tauri-apps/api/core'
+import { homeDir, join } from '@tauri-apps/api/path'
 import {
-  ArrowLeftIcon,
   ArrowPathIcon,
   DocumentCheckIcon,
   PlusIcon,
@@ -248,6 +251,9 @@ const isLoading = ref(false)
 const hasChanges = ref(false)
 const showRawEditor = ref(false)
 const rawConfigText = ref('')
+
+// 当前配置文件路径
+const currentConfigPath = ref('')
 
 // 删除确认对话框状态
 const showDeleteConfirm = ref(false)
@@ -518,5 +524,12 @@ const parseRawConfig = () => {
 onMounted(async () => {
   await keyStore.loadKeys()
   await loadConfig()
+  try {
+    const home = await homeDir()
+    currentConfigPath.value = await join(home, '.ssh', 'config')
+  } catch (e) {
+    console.log(e)
+    currentConfigPath.value = ''
+  }
 })
 </script>

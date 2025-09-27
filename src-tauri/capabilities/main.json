@@ -1,7 +1,9 @@
 {
   "identifier": "main-capability",
   "description": "Main application capability with dialog permissions",
-  "windows": ["main"],
+  "windows": [
+    "main"
+  ],
   "permissions": [
     "dialog:allow-save",
     "dialog:allow-open",
@@ -9,6 +11,9 @@
     "dialog:allow-ask",
     "dialog:allow-confirm",
     "dialog:default",
-    "process:default"
+    "process:default",
+    "core:path:default",
+    "core:path:allow-join",
+    "core:path:allow-resolve-directory"
   ]
 }
