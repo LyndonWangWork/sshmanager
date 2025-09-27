@@ -2,20 +2,18 @@
   <div class="space-y-6">
     <!-- 修复生成按钮样式问题 -->
     <div class="flex justify-center py-4">
-      <BaseButton 
-        type="submit" 
-        :disabled="isGenerating || !isFormValid" 
-        class="relative overflow-hidden group px-8 py-3"
-        :class="{
+      <BaseButton type="submit" :disabled="isGenerating || !isFormValid"
+        class="relative overflow-hidden group px-8 py-3" :class="{
           'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white': !isGenerating && isFormValid,
           'bg-gray-300 text-gray-500 cursor-not-allowed': isGenerating || !isFormValid,
           'transform hover:translate-y-[-1px] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]': !isGenerating && isFormValid,
           'shadow-lg hover:shadow-xl': !isGenerating && isFormValid
-        }"
-        @click="generateKey">
+        }" @click="generateKey">
         <!-- 光扫动画效果 -->
-        <div v-if="!isGenerating && isFormValid" class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out"></div>
-        
+        <div v-if="!isGenerating && isFormValid"
+          class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out">
+        </div>
+
         <span v-if="isGenerating" class="flex items-center relative z-10">
           <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
             viewBox="0 0 24 24">
@@ -40,21 +38,11 @@
         <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('keyGenerator.keyInfo.title') }}</h2>
 
         <form @submit.prevent="generateKey" class="space-y-4">
-          <BaseInput 
-            v-model="keyParams.name" 
-            :label="$t('keyGenerator.keyInfo.name')" 
-            required 
-            :placeholder="$t('keyGenerator.keyInfo.namePlaceholder')" 
-            :error="errors.name" 
-            show-clear-button
-          />
+          <BaseInput v-model="keyParams.name" :label="$t('keyGenerator.keyInfo.name')" required
+            :placeholder="$t('keyGenerator.keyInfo.namePlaceholder')" :error="errors.name" show-clear-button />
 
-          <BaseInput 
-            v-model="keyParams.comment" 
-            :label="$t('keyGenerator.keyInfo.comment')" 
-            :placeholder="$t('keyGenerator.keyInfo.commentPlaceholder')" 
-            show-clear-button
-          />
+          <BaseInput v-model="keyParams.comment" :label="$t('keyGenerator.keyInfo.comment')"
+            :placeholder="$t('keyGenerator.keyInfo.commentPlaceholder')" show-clear-button />
         </form>
       </div>
 
@@ -65,7 +53,8 @@
         <div class="space-y-4">
           <!-- 密钥类型选择 -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-3">{{ $t('keyGenerator.keyType.selectType') }}</label>
+            <label class="block text-sm font-medium text-gray-700 mb-3">{{ $t('keyGenerator.keyType.selectType')
+              }}</label>
             <div class="space-y-2">
               <label v-for="type in keyTypes" :key="type.value"
                 class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
@@ -86,7 +75,8 @@
 
           <!-- 密钥长度 -->
           <div v-if="keyParams.key_type !== 'Ed25519'">
-            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('keyGenerator.keyType.keyLength') }}</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('keyGenerator.keyType.keyLength')
+              }}</label>
             <select v-model="keyParams.key_size"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option v-for="size in availableKeySizes" :key="size" :value="size">
@@ -115,7 +105,8 @@
               </svg>
             </div>
             <div class="ml-3">
-              <h3 class="text-sm font-medium text-green-800">{{ $t('keyGenerator.advancedOptions.realKeyGeneration.title') }}</h3>
+              <h3 class="text-sm font-medium text-green-800">{{
+                $t('keyGenerator.advancedOptions.realKeyGeneration.title') }}</h3>
               <div class="mt-2 text-sm text-green-700">
                 <p>{{ $t('keyGenerator.advancedOptions.realKeyGeneration.content') }}</p>
               </div>
@@ -132,24 +123,14 @@
             </label>
 
             <div v-if="advancedOptions.usePassphrase" class="ml-6 space-y-3">
-              <BaseInput 
-                v-model="keyParams.passphrase" 
-                :label="$t('keyGenerator.advancedOptions.passphrase')" 
-                type="password" 
-                :placeholder="$t('keyGenerator.advancedOptions.passphrasePlaceholder')"
-                :error="errors.passphrase" 
-                :hint="$t('keyGenerator.advancedOptions.passphraseHint')" 
-                show-clear-button
-              />
+              <BaseInput v-model="keyParams.passphrase" :label="$t('keyGenerator.advancedOptions.passphrase')"
+                type="password" :placeholder="$t('keyGenerator.advancedOptions.passphrasePlaceholder')"
+                :error="errors.passphrase" :hint="$t('keyGenerator.advancedOptions.passphraseHint')"
+                show-clear-button />
 
-              <BaseInput 
-                v-model="passphraseConfirm" 
-                :label="$t('keyGenerator.advancedOptions.confirmPassphrase')" 
-                type="password" 
-                :placeholder="$t('keyGenerator.advancedOptions.confirmPassphrasePlaceholder')"
-                :error="errors.passphraseConfirm" 
-                show-clear-button
-              />
+              <BaseInput v-model="passphraseConfirm" :label="$t('keyGenerator.advancedOptions.confirmPassphrase')"
+                type="password" :placeholder="$t('keyGenerator.advancedOptions.confirmPassphrasePlaceholder')"
+                :error="errors.passphraseConfirm" show-clear-button />
 
               <div class="bg-blue-50 border border-blue-200 rounded-md p-3">
                 <div class="flex">
@@ -161,7 +142,8 @@
                     </svg>
                   </div>
                   <div class="ml-3">
-                    <h3 class="text-sm font-medium text-blue-800">{{ $t('keyGenerator.advancedOptions.securityTip.title') }}</h3>
+                    <h3 class="text-sm font-medium text-blue-800">{{
+                      $t('keyGenerator.advancedOptions.securityTip.title') }}</h3>
                     <div class="mt-2 text-sm text-blue-700">
                       <p>{{ $t('keyGenerator.advancedOptions.securityTip.content') }}</p>
                     </div>
@@ -218,7 +200,8 @@
 
           <!-- 指纹 -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('keyGenerator.result.fingerprint') }}</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('keyGenerator.result.fingerprint')
+              }}</label>
             <div class="flex items-center space-x-2">
               <code class="flex-1 text-xs font-mono bg-gray-100 px-3 py-2 rounded border">
                     {{ generatedKey.fingerprint }}
@@ -232,7 +215,8 @@
 
           <!-- 公钥 -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('keyGenerator.result.publicKey') }}</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('keyGenerator.result.publicKey')
+              }}</label>
             <textarea :value="generatedKey.public_key" readonly rows="3"
               class="w-full text-xs font-mono bg-gray-50 border border-gray-300 rounded-md p-3 resize-none"></textarea>
             <div class="flex space-x-2 mt-2">
