@@ -42,7 +42,8 @@
                     {{ host.hostname || $t('configEditor.hostConfig.hostnameHint') }}
                   </p>
                 </div>
-                <button @click.stop="deleteHost(index)" class="p-1 text-gray-400 hover:text-red-600 transition-colors">
+                <button @click.stop="openDeleteHostConfirm(index)"
+                  class="p-1 text-gray-400 hover:text-red-600 transition-colors">
                   <TrashIcon class="h-4 w-4" />
                 </button>
               </div>
@@ -169,6 +170,46 @@
       </div>
     </div>
   </div>
+
+  <!-- 删除确认对话框 -->
+  <div v-if="showDeleteConfirm" class="fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      <div class="fixed inset-0 transition-opacity">
+        <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+      </div>
+
+      <span class="hidden sm:inline-block sm:align-middle sm:h-screen"></span>&#8203;
+      <div
+        class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+          <div class="sm:flex sm:items-start">
+            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+              <h3 class="text-lg leading-6 font-medium text-gray-900">
+                {{ $t('configEditor.hostConfig.title') }}
+              </h3>
+              <div class="mt-2">
+                <p class="text-sm text-gray-500">
+                  {{ $t('configEditor.hostConfig.deleteConfirm') }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+          <button type="button"
+            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm"
+            @click="confirmDeleteHost">
+            {{ $t('common.delete') }}
+          </button>
+          <button type="button"
+            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+            @click="cancelDeleteHost">
+            {{ $t('common.cancel') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -207,6 +248,10 @@ const isLoading = ref(false)
 const hasChanges = ref(false)
 const showRawEditor = ref(false)
 const rawConfigText = ref('')
+
+// 删除确认对话框状态
+const showDeleteConfirm = ref(false)
+const pendingDeleteIndex = ref<number | null>(null)
 
 // 切换编辑模式
 const toggleEditMode = () => {
@@ -315,18 +360,35 @@ const addNewHost = () => {
 
 // 删除主机
 const deleteHost = (index: number) => {
-  debugger
-  if (confirm(t('configEditor.hostConfig.deleteConfirm'))) {
-    sshConfig.hosts.splice(index, 1)
+  sshConfig.hosts.splice(index, 1)
 
-    if (selectedHostIndex.value === index) {
-      selectedHostIndex.value = -1
-    } else if (selectedHostIndex.value > index) {
-      selectedHostIndex.value--
-    }
-
-    hasChanges.value = true
+  if (selectedHostIndex.value === index) {
+    selectedHostIndex.value = -1
+  } else if (selectedHostIndex.value > index) {
+    selectedHostIndex.value--
   }
+
+  hasChanges.value = true
+}
+
+// 打开删除确认对话框
+const openDeleteHostConfirm = (index: number) => {
+  pendingDeleteIndex.value = index
+  showDeleteConfirm.value = true
+}
+
+// 取消删除
+const cancelDeleteHost = () => {
+  showDeleteConfirm.value = false
+  pendingDeleteIndex.value = null
+}
+
+// 确认删除
+const confirmDeleteHost = () => {
+  if (pendingDeleteIndex.value !== null) {
+    deleteHost(pendingDeleteIndex.value)
+  }
+  cancelDeleteHost()
 }
 
 // 添加选项
