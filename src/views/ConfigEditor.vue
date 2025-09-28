@@ -232,13 +232,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted } from 'vue'
+import { ref, computed, reactive, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useKeyStore } from '@/stores/key'
 import { buildFullOptionsFrom, SSH_OPTION_SPECS } from '@/utils/sshOptions'
 import type { SshConfig, SshHostConfig } from '@/types'
 import BaseButton from '@/components/BaseButton.vue'
 import BaseInput from '@/components/BaseInput.vue'
+import { useToast } from '@/composables/useToast'
 import { invoke } from '@tauri-apps/api/core'
 import { homeDir, join } from '@tauri-apps/api/path'
 import {
@@ -282,6 +283,8 @@ const isLoading = ref(false)
 const hasChanges = ref(false)
 const showRawEditor = ref(false)
 const rawConfigText = ref('')
+// Toast 提示状态（使用通用组件）
+const { success: toastSuccess, error: toastError } = useToast()
 
 // 当前配置文件路径
 const currentConfigPath = ref('')
@@ -462,6 +465,7 @@ const loadConfig = async () => {
     hasChanges.value = false
   } catch (error) {
     console.error(t('configEditor.messages.loadError'), error)
+    toastError(`${t('configEditor.messages.loadError')} ${error}`)
   } finally {
     isLoading.value = false
   }
@@ -493,8 +497,10 @@ const saveConfig = async () => {
     // file_path 可留空使用默认 ~/.ssh/config；保留策略可从应用配置获取，这里先用 10
     await invoke('save_ssh_config', { content, filePath: undefined, retention: 10 })
     hasChanges.value = false
+    toastSuccess(t('configEditor.messages.saveSuccess'))
   } catch (error) {
     console.error(t('configEditor.messages.saveError'), error)
+    toastError(`${t('configEditor.messages.saveError')} ${error}`)
   } finally {
     isLoading.value = false
   }
@@ -504,9 +510,10 @@ const saveConfig = async () => {
 const copyConfig = async () => {
   try {
     await navigator.clipboard.writeText(rawConfigText.value)
-    // TODO: 显示成功提示
+    toastSuccess(t('configEditor.messages.copySuccess'))
   } catch (error) {
     console.error(t('configEditor.messages.copyError'), error)
+    toastError(`${t('configEditor.messages.copyError')} ${error}`)
   }
 }
 
@@ -530,4 +537,6 @@ onMounted(async () => {
     currentConfigPath.value = ''
   }
 })
+
+onUnmounted(() => { })
 </script>

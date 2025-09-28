@@ -1,28 +1,23 @@
 <template>
-  <div class="min-h-screen bg-transparent">
+  <div class="min-h-screen bg-transparent flex flex-col">
     <!-- 顶部导航 -->
     <TopNavigation @logout="handleLogout" />
 
-    <div class="flex relative">
+    <div class="flex relative flex-1">
       <!-- 侧边导航 -->
-      <SideNavigation 
-        :navigation="navigation"
-        :current-route="$route.name"
-      />
+      <SideNavigation :navigation="navigation" :current-route="$route.name" />
 
       <!-- 主内容区 -->
       <MainContent :class="contentClass">
         <RouterView v-slot="{ Component, route }">
-          <Transition
-            name="page"
-            mode="out-in"
-            appear
-          >
+          <Transition name="page" mode="out-in" appear>
             <component :is="Component" :key="route.path" v-if="Component" />
           </Transition>
         </RouterView>
       </MainContent>
     </div>
+    <!-- 全局 Toast 容器 -->
+    <ToastContainer />
   </div>
 </template>
 
@@ -34,6 +29,7 @@ import { useAuthStore } from '@/stores/auth'
 import TopNavigation from './TopNavigation.vue'
 import SideNavigation from './SideNavigation.vue'
 import MainContent from './MainContent.vue'
+import ToastContainer from './ToastContainer.vue'
 import {
   HomeIcon,
   KeyIcon,
@@ -81,8 +77,8 @@ const contentClass = computed(() => {
   if (isMobile.value) {
     return 'flex-1 transition-all duration-300'
   }
-  return sidebarCollapsed.value 
-    ? 'flex-1 ml-16 transition-all duration-300' 
+  return sidebarCollapsed.value
+    ? 'flex-1 ml-16 transition-all duration-300'
     : 'flex-1 transition-all duration-300'
 })
 

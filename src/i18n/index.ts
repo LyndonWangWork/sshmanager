@@ -236,6 +236,7 @@ const zh = {
     messages: {
       loadError: '加载配置失败:',
       saveError: '保存配置失败:',
+      saveSuccess: '配置保存成功',
       copySuccess: '配置已复制到剪贴板',
       copyError: '复制失败:',
       featureNotImplemented: '功能待实现'
@@ -601,6 +602,7 @@ const en = {
     messages: {
       loadError: 'Failed to load configuration:',
       saveError: 'Failed to save configuration:',
+      saveSuccess: 'Configuration saved successfully',
       copySuccess: 'Configuration copied to clipboard',
       copyError: 'Copy failed:',
       featureNotImplemented: 'Feature not implemented yet'

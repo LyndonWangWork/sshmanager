@@ -164,6 +164,7 @@ import BaseButton from '@/components/BaseButton.vue'
 import BaseInput from '@/components/BaseInput.vue'
 import KeyCard from '@/components/KeyCard.vue'
 import ImportExportDialog from '@/components/ImportExportDialog.vue'
+import { useToast } from '@/composables/useToast'
 import {
   KeyIcon,
   PlusIcon,
@@ -178,6 +179,7 @@ import {
 
 const { t } = useI18n()
 const keyStore = useKeyStore()
+const { success: toastSuccess, error: toastError } = useToast()
 
 // 搜索和过滤状态
 const searchQuery = ref('')
@@ -248,10 +250,10 @@ const filteredKeys = computed(() => {
 const handleDeleteKey = async (keyId: string) => {
   try {
     await keyStore.deleteKey(keyId)
-    // TODO: 显示成功提示
+    toastSuccess(`${t('keyManager.actions.delete')} ${t('common.success')}`)
   } catch (error) {
     console.error('删除密钥失败:', error)
-    // TODO: 显示错误提示
+    toastError(`${t('keyManager.actions.delete')} ${t('common.error')}`)
   }
 }
 
@@ -294,7 +296,7 @@ const handleExportKey = async (keyId: string) => {
     showExportDialog.value = true
   } catch (error) {
     console.error('导出密钥失败:', error)
-    // TODO: 显示错误提示
+    toastError(`${t('keyManager.actions.export')} ${t('common.error')}`)
   }
 }
 
@@ -307,25 +309,25 @@ const importKeys = () => {
 // 处理导入成功
 const handleImportSuccess = (message: string) => {
   console.log('导入成功:', message)
-  // TODO: 显示成功提示
+  toastSuccess(message)
 }
 
 // 处理导入错误
 const handleImportError = (error: string) => {
   console.error('导入错误:', error)
-  // TODO: 显示错误提示
+  toastError(error)
 }
 
 // 处理导出成功
 const handleExportSuccess = (message: string) => {
   console.log('导出成功:', message)
-  // TODO: 显示成功提示
+  toastSuccess(message)
 }
 
 // 处理导出错误
 const handleExportError = (error: string) => {
   console.error('导出错误:', error)
-  // TODO: 显示错误提示
+  toastError(error)
 }
 
 // 页面初始化
