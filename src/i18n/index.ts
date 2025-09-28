@@ -20,7 +20,8 @@ const zh = {
     warning: '警告',
     info: '信息',
     file: '文件',
-    line: '行'
+    line: '行',
+    copy: '复制'
   },
   nav: {
     dashboard: '仪表板',
@@ -384,7 +385,8 @@ const en = {
     warning: 'Warning',
     info: 'Info',
     file: 'File',
-    line: 'Line'
+    line: 'Line',
+    copy: 'Copy'
   },
   nav: {
     dashboard: 'Dashboard',
