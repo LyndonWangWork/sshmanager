@@ -96,7 +96,7 @@
 
             <!-- 表单编辑模式 -->
             <div v-else>
-              <div v-if="selectedHostIndex >= 0" class="space-y-4">
+              <div v-if="selectedHostIndex >= 0 && selectedHost" class="space-y-4">
                 <!-- Host 模式 -->
                 <BaseInput v-model="selectedHost.host_pattern" :label="$t('configEditor.hostConfig.hostPattern')"
                   required :placeholder="$t('configEditor.hostConfig.hostPatternPlaceholder')"
@@ -232,7 +232,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, computed, reactive, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useKeyStore } from '@/stores/key'
 import { buildFullOptionsFrom, SSH_OPTION_SPECS } from '@/utils/sshOptions'
@@ -293,6 +293,28 @@ const currentConfigPath = ref('')
 const showDeleteConfirm = ref(false)
 const pendingDeleteIndex = ref<number | null>(null)
 
+// 选中的主机配置
+const selectedHost = computed(() => {
+  if (selectedHostIndex.value >= 0 && selectedHostIndex.value < sshConfig.hosts.length) {
+    return sshConfig.hosts[selectedHostIndex.value]
+  }
+  return null
+})
+// 深度监听配置对象，忽略加载/保存阶段，用户修改时标记为已变更
+watch(
+  () => [selectedHost.value, selectedHostIndex.value],
+  (newVal, oldVal) => {
+    if (isLoading.value || !oldVal) return
+    if (newVal[1] === oldVal[1]) {
+      hasChanges.value = true
+      return
+    }
+
+  },
+  { deep: true }
+)
+
+
 // 切换编辑模式
 const toggleEditMode = () => {
   // 在切换到文本编辑模式时，更新原始配置文本
@@ -302,27 +324,13 @@ const toggleEditMode = () => {
   showRawEditor.value = !showRawEditor.value
 }
 
-// 选中的主机配置
-const selectedHost = computed(() => {
-  if (selectedHostIndex.value >= 0 && selectedHostIndex.value < sshConfig.hosts.length) {
-    return sshConfig.hosts[selectedHostIndex.value]
-  }
-  return {
-    host_pattern: '',
-    hostname: '',
-    user: '',
-    port: 22,
-    identity_file: '',
-    other_options: {}
-  } as SshHostConfig
-})
 
 // 在“其他选项”展示中排除已由专用字段承载的键，避免重复
 const EXCLUDED_FIXED_FIELDS = new Set(['HostName', 'User', 'Port', 'IdentityFile'])
 
 // 使用全量选项+现有值构建展示数组（无值显示为空），并排除固定字段
 const otherOptionsArray = computed(() => {
-  if (selectedHostIndex.value >= 0) {
+  if (selectedHostIndex.value >= 0 && selectedHost.value) {
     const list = buildFullOptionsFrom(selectedHost.value.other_options)
     return list.filter((item) => !EXCLUDED_FIXED_FIELDS.has(item.key))
   }
@@ -436,7 +444,7 @@ const confirmDeleteHost = () => {
 
 // 更新选项值
 const updateOptionValue = (index: number, newValue: string) => {
-  if (selectedHostIndex.value >= 0) {
+  if (selectedHostIndex.value >= 0 && selectedHost.value) {
     const option = otherOptionsArray.value[index]
     if (option) {
       selectedHost.value.other_options[option.key] = newValue
