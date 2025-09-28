@@ -5,6 +5,7 @@ import { getUserLanguage } from '@/utils/language'
 const zh = {
   common: {
     confirm: '确认',
+    select: '选择',
     cancel: '取消',
     save: '保存',
     delete: '删除',
@@ -196,7 +197,33 @@ const zh = {
       optionName: '选项名',
       optionValue: '选项值',
       deleteOption: '删除选项',
-      selectHostMessage: '请选择一个主机进行配置'
+      selectHostMessage: '请选择一个主机进行配置',
+      optionDescriptions: {
+        HostName: '要连接的真实主机名或 IP 地址',
+        User: '用于登录远程主机的用户名',
+        Port: 'SSH 连接端口，默认 22',
+        IdentityFile: '用于认证的私钥路径，可设置多个',
+        ProxyJump: '通过中转主机进行跳转（等价于 -J）',
+        ProxyCommand: '自定义代理命令，用于建立连接',
+        ForwardAgent: '是否转发本地 SSH 代理，yes/no',
+        ForwardX11: '是否启用 X11 转发，yes/no',
+        StrictHostKeyChecking: '主机密钥校验策略（yes/no/accept-new）',
+        UserKnownHostsFile: '已知主机文件路径（默认 ~/.ssh/known_hosts）',
+        PreferredAuthentications: '首选认证方法，逗号分隔',
+        ServerAliveInterval: '保持心跳间隔（秒）',
+        ServerAliveCountMax: '心跳失败次数阈值',
+        Compression: '是否启用压缩，yes/no',
+        IdentitiesOnly: '只使用指定私钥进行认证，yes/no',
+        AddKeysToAgent: '自动将密钥添加到 ssh-agent（yes/no/confirm）',
+        ControlMaster: '复用已有连接（yes/no/auto）',
+        ControlPath: '连接复用的控制套接字路径',
+        ControlPersist: '连接保持时间（如 10m 或 yes）',
+        LocalForward: '本地端口转发：本地端口 远端地址:端口',
+        RemoteForward: '远程端口转发：远端端口 本地地址:端口',
+        SendEnv: '发送到远端的环境变量（可多次指定）',
+        SetEnv: '在会话中设置环境变量（KEY=VALUE）',
+        LogLevel: '日志级别（QUIET/ERROR/INFO/VERBOSE/DEBUG）'
+      }
     },
     preview: {
       title: '配置预览',
@@ -342,6 +369,7 @@ const zh = {
 const en = {
   common: {
     confirm: 'Confirm',
+    select: 'Select',
     cancel: 'Cancel',
     save: 'Save',
     delete: 'Delete',
@@ -533,7 +561,33 @@ const en = {
       optionName: 'Option Name',
       optionValue: 'Option Value',
       deleteOption: 'Delete Option',
-      selectHostMessage: 'Please select a host to configure'
+      selectHostMessage: 'Please select a host to configure',
+      optionDescriptions: {
+        HostName: 'Actual hostname or IP address to connect to',
+        User: 'Username for remote login',
+        Port: 'SSH port, default 22',
+        IdentityFile: 'Private key path(s) for authentication',
+        ProxyJump: 'Jump through a proxy host (equivalent to -J)',
+        ProxyCommand: 'Custom proxy command used to establish the connection',
+        ForwardAgent: 'Forward local SSH agent, yes/no',
+        ForwardX11: 'Enable X11 forwarding, yes/no',
+        StrictHostKeyChecking: 'Host key checking policy (yes/no/accept-new)',
+        UserKnownHostsFile: 'Known hosts file path (default ~/.ssh/known_hosts)',
+        PreferredAuthentications: 'Preferred authentication methods, comma-separated',
+        ServerAliveInterval: 'Keepalive interval in seconds',
+        ServerAliveCountMax: 'Max keepalive failures before disconnect',
+        Compression: 'Enable compression, yes/no',
+        IdentitiesOnly: 'Use only specified identities for authentication, yes/no',
+        AddKeysToAgent: 'Automatically add keys to ssh-agent (yes/no/confirm)',
+        ControlMaster: 'Reuse existing connections (yes/no/auto)',
+        ControlPath: 'Control socket path for connection multiplexing',
+        ControlPersist: 'Keep master connection alive (e.g., 10m or yes)',
+        LocalForward: 'Local port forward: local_port remote_host:remote_port',
+        RemoteForward: 'Remote port forward: remote_port local_host:local_port',
+        SendEnv: 'Environment variables to send (can be specified multiple times)',
+        SetEnv: 'Set environment variables in session (KEY=VALUE)',
+        LogLevel: 'Logging level (QUIET/ERROR/INFO/VERBOSE/DEBUG)'
+      }
     },
     preview: {
       title: 'Configuration Preview',

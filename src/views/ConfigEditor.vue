@@ -122,7 +122,8 @@
                   </label>
                   <div class="flex space-x-2">
                     <select v-model="selectedHost.identity_file"
-                      class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      :class="(selectedHost.identity_file && selectedHost.identity_file.length > 0) ? 'text-gray-900' : 'text-gray-400'">
                       <option value="">{{ $t('configEditor.hostConfig.selectKey') }}</option>
                       <option v-for="key in keyStore.keys" :key="key.id" :value="`~/.ssh/${key.name}`">
                         {{ key.name }} ({{ key.key_type.toUpperCase() }})
@@ -140,25 +141,40 @@
                     {{ $t('configEditor.hostConfig.otherOptions') }}
                   </label>
                   <div class="space-y-2">
-                    <div v-for="(option, index) in otherOptionsArray" :key="index" class="flex items-center space-x-2">
-                      <input v-model="option.key"
-                        @input="updateOptionKey(index, ($event.target as HTMLInputElement).value)"
-                        :placeholder="$t('configEditor.hostConfig.optionName')"
-                        class="w-1/2 min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
-                      <input v-model="option.value"
-                        @input="updateOptionValue(index, ($event.target as HTMLInputElement).value)"
-                        :placeholder="$t('configEditor.hostConfig.optionValue')"
-                        class="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
-                      <button @click="removeOptionByIndex(index)"
-                        class="flex-shrink-0 p-2 text-gray-400 hover:text-red-600 transition-colors"
-                        :title="$t('configEditor.hostConfig.deleteOption')">
-                        <TrashIcon class="h-4 w-4" />
-                      </button>
+                    <div v-for="(option, index) in otherOptionsArray" :key="option.key" class="space-y-1">
+                      <div class="flex items-center space-x-2">
+                        <div class="w-1/2 min-w-0 text-sm text-gray-700 truncate">{{ option.key }}</div>
+                        <template v-if="SSH_OPTION_SPECS[option.key]?.type === 'boolean'">
+                          <select :value="normalizeBool(option.value)"
+                            @change="updateOptionValue(index, ($event.target as HTMLSelectElement).value)"
+                            class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                            :class="normalizeBool(option.value) === '' ? 'text-gray-400' : 'text-gray-900'">
+                            <option value="">{{ $t('common.select') || 'Select' }}</option>
+                            <option value="yes">yes</option>
+                            <option value="no">no</option>
+                          </select>
+                        </template>
+                        <template v-else-if="SSH_OPTION_SPECS[option.key]?.type === 'enum'">
+                          <select :value="normalizeEnum(option.key, option.value)"
+                            @change="updateOptionValue(index, ($event.target as HTMLSelectElement).value)"
+                            class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                            :class="normalizeEnum(option.key, option.value) === '' ? 'text-gray-400' : 'text-gray-900'">
+                            <option value="">{{ $t('common.select') || 'Select' }}</option>
+                            <option v-for="v in SSH_OPTION_SPECS[option.key].values" :key="v" :value="v">{{ v }}
+                            </option>
+                          </select>
+                        </template>
+                        <template v-else>
+                          <input :value="option.value"
+                            @input="updateOptionValue(index, ($event.target as HTMLInputElement).value)"
+                            :placeholder="$t('configEditor.hostConfig.optionValue')"
+                            class="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+                        </template>
+                      </div>
+                      <p class="text-xs text-gray-500">
+                        {{ $t('configEditor.hostConfig.optionDescriptions.' + option.key) }}
+                      </p>
                     </div>
-                    <BaseButton size="sm" variant="secondary" @click="addOption">
-                      <PlusIcon class="h-4 w-4 mr-1" />
-                      {{ $t('configEditor.hostConfig.addOption') }}
-                    </BaseButton>
                   </div>
                 </div>
               </div>
@@ -219,6 +235,7 @@
 import { ref, computed, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useKeyStore } from '@/stores/key'
+import { buildFullOptionsFrom, SSH_OPTION_SPECS } from '@/utils/sshOptions'
 import type { SshConfig, SshHostConfig } from '@/types'
 import BaseButton from '@/components/BaseButton.vue'
 import BaseInput from '@/components/BaseInput.vue'
@@ -239,6 +256,20 @@ import {
 
 const { t } = useI18n()
 const keyStore = useKeyStore()
+
+// 布尔与枚举值规范化，统一小写，空值返回空字符串
+const normalizeBool = (val: string | undefined) => {
+  const v = (val || '').trim().toLowerCase()
+  if (v === 'yes' || v === 'no') return v
+  return ''
+}
+
+const normalizeEnum = (key: string, val: string | undefined) => {
+  const spec = (SSH_OPTION_SPECS as any)[key]
+  if (!spec || !spec.values) return (val || '').trim()
+  const v = (val || '').trim().toLowerCase()
+  return spec.values.includes(v) ? v : ''
+}
 
 // SSH配置状态
 const sshConfig = reactive<SshConfig>({
@@ -283,13 +314,14 @@ const selectedHost = computed(() => {
   } as SshHostConfig
 })
 
-// 将other_options转换为可编辑的数组格式
+// 在“其他选项”展示中排除已由专用字段承载的键，避免重复
+const EXCLUDED_FIXED_FIELDS = new Set(['HostName', 'User', 'Port', 'IdentityFile'])
+
+// 使用全量选项+现有值构建展示数组（无值显示为空），并排除固定字段
 const otherOptionsArray = computed(() => {
-  if (selectedHostIndex.value >= 0 && selectedHost.value.other_options) {
-    return Object.entries(selectedHost.value.other_options).map(([key, value]) => ({
-      key,
-      value
-    }))
+  if (selectedHostIndex.value >= 0) {
+    const list = buildFullOptionsFrom(selectedHost.value.other_options)
+    return list.filter((item) => !EXCLUDED_FIXED_FIELDS.has(item.key))
   }
   return []
 })
@@ -397,48 +429,7 @@ const confirmDeleteHost = () => {
   cancelDeleteHost()
 }
 
-// 添加选项
-const addOption = () => {
-  if (selectedHostIndex.value >= 0) {
-    selectedHost.value.other_options[''] = ''
-    hasChanges.value = true
-  }
-}
-
-// 移除选项
-const removeOption = (key: string) => {
-  if (selectedHostIndex.value >= 0) {
-    delete selectedHost.value.other_options[key]
-    hasChanges.value = true
-  }
-}
-
-// 通过索引移除选项
-const removeOptionByIndex = (index: number) => {
-  if (selectedHostIndex.value >= 0) {
-    const option = otherOptionsArray.value[index]
-    if (option) {
-      delete selectedHost.value.other_options[option.key]
-      hasChanges.value = true
-    }
-  }
-}
-
-// 更新选项键名
-const updateOptionKey = (index: number, newKey: string) => {
-  if (selectedHostIndex.value >= 0) {
-    const option = otherOptionsArray.value[index]
-    if (option && option.key !== newKey) {
-      const oldKey = option.key
-      const value = selectedHost.value.other_options[oldKey]
-
-      // 删除旧键，添加新键
-      delete selectedHost.value.other_options[oldKey]
-      selectedHost.value.other_options[newKey] = value
-      hasChanges.value = true
-    }
-  }
-}
+// 移除增删与改名逻辑；仅允许修改值
 
 // 更新选项值
 const updateOptionValue = (index: number, newValue: string) => {
@@ -476,11 +467,28 @@ const loadConfig = async () => {
   }
 }
 
+// 保存前清理空值选项
+const cleanupEmptyOptions = () => {
+  for (const host of sshConfig.hosts) {
+    if (!host.other_options) continue
+    for (const [k, v] of Object.entries(host.other_options)) {
+      const key = (k || '').trim()
+      const val = (v || '').trim()
+      if (!key || !val) {
+        delete host.other_options[k]
+      }
+    }
+  }
+}
+
 // 保存配置
 const saveConfig = async () => {
   isLoading.value = true
 
   try {
+    if (!showRawEditor.value) {
+      cleanupEmptyOptions()
+    }
     const content = showRawEditor.value ? rawConfigText.value : generatedConfig.value
     // file_path 可留空使用默认 ~/.ssh/config；保留策略可从应用配置获取，这里先用 10
     await invoke('save_ssh_config', { content, filePath: undefined, retention: 10 })
