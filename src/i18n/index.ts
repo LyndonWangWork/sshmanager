@@ -190,6 +190,10 @@ const zh = {
       identityFile: '身份文件 (私钥)',
       selectKey: '选择密钥',
       browse: '浏览',
+      identityGroups: {
+        softwareKeys: '软件内密钥',
+        sshDirKeys: '配置目录密钥'
+      },
       addOption: '添加选项',
       newHost: '新主机',
       deleteConfirm: '确定要删除这个主机配置吗？',
@@ -223,7 +227,8 @@ const zh = {
         RemoteForward: '远程端口转发：远端端口 本地地址:端口',
         SendEnv: '发送到远端的环境变量（可多次指定）',
         SetEnv: '在会话中设置环境变量（KEY=VALUE）',
-        LogLevel: '日志级别（QUIET/ERROR/INFO/VERBOSE/DEBUG）'
+        LogLevel: '日志级别（QUIET/ERROR/INFO/VERBOSE/DEBUG）',
+        TCPKeepAlive: '启用 TCP keepalive 机制，保持连接活跃（yes/no）'
       }
     },
     preview: {
@@ -556,6 +561,10 @@ const en = {
       identityFile: 'Identity File (Private Key)',
       selectKey: 'Select Key',
       browse: 'Browse',
+      identityGroups: {
+        softwareKeys: 'Managed Keys',
+        sshDirKeys: 'Keys in SSH directory'
+      },
       addOption: 'Add Option',
       newHost: 'New Host',
       deleteConfirm: 'Are you sure you want to delete this host configuration?',
@@ -589,7 +598,8 @@ const en = {
         RemoteForward: 'Remote port forward: remote_port local_host:local_port',
         SendEnv: 'Environment variables to send (can be specified multiple times)',
         SetEnv: 'Set environment variables in session (KEY=VALUE)',
-        LogLevel: 'Logging level (QUIET/ERROR/INFO/VERBOSE/DEBUG)'
+        LogLevel: 'Logging level (QUIET/ERROR/INFO/VERBOSE/DEBUG)',
+        TCPKeepAlive: 'Enable TCP keepalive mechanism to keep connection alive (yes/no)'
       }
     },
     preview: {

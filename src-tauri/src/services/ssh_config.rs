@@ -70,6 +70,81 @@ impl SshConfigService {
     }
 }
 
+fn default_ssh_dir() -> AppResult<PathBuf> {
+    let home =
+        dirs::home_dir().ok_or_else(|| AppError::ConfigError("无法获取用户主目录".to_string()))?;
+    Ok(home.join(".ssh"))
+}
+
+impl SshConfigService {
+    /// 列出 ~/.ssh 目录下可能的私钥文件
+    /// 规则：
+    /// - 常见私钥名称（id_rsa/id_ecdsa/id_ed25519/id_dsa）
+    /// - 任意不以 .pub 结尾的文件，且内容前几百字节包含 "PRIVATE KEY"（尽量避免误报）
+    pub fn list_identity_files(dir_path: Option<&str>) -> AppResult<Vec<String>> {
+        let dir = match dir_path {
+            Some(p) if !p.trim().is_empty() => PathBuf::from(p),
+            _ => default_ssh_dir()?,
+        };
+
+        if !dir.exists() || !dir.is_dir() {
+            return Ok(Vec::new());
+        }
+
+        let mut result: Vec<String> = Vec::new();
+        let common_names = ["id_rsa", "id_ecdsa", "id_ed25519", "id_dsa"];
+
+        for entry in fs::read_dir(&dir)? {
+            let entry = match entry {
+                Ok(e) => e,
+                Err(_) => continue,
+            };
+            let path = entry.path();
+            if !path.is_file() {
+                continue;
+            }
+
+            let file_name = match path.file_name().and_then(|s| s.to_str()) {
+                Some(n) => n.to_string(),
+                None => continue,
+            };
+
+            // 跳过公钥和明显的备份文件
+            if file_name.ends_with(".pub")
+                || file_name.ends_with(".bak")
+                || file_name.ends_with(".backup")
+            {
+                continue;
+            }
+
+            // 常见私钥名直接包含
+            let mut include = common_names.contains(&file_name.as_str());
+
+            // 否则做一次轻量内容检查
+            if !include {
+                if let Ok(mut f) = fs::File::open(&path) {
+                    use std::io::Read;
+                    let mut buf = [0u8; 512];
+                    let _ = f.read(&mut buf);
+                    let head = String::from_utf8_lossy(&buf);
+                    if head.contains("PRIVATE KEY") {
+                        include = true;
+                    }
+                }
+            }
+
+            if include {
+                result.push(file_name);
+            }
+        }
+
+        // 排序保证稳定性
+        result.sort();
+        result.dedup();
+        Ok(result)
+    }
+}
+
 fn default_ssh_config_path() -> AppResult<PathBuf> {
     let home =
         dirs::home_dir().ok_or_else(|| AppError::ConfigError("无法获取用户主目录".to_string()))?;

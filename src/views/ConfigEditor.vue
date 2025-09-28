@@ -125,12 +125,19 @@
                       class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       :class="(selectedHost.identity_file && selectedHost.identity_file.length > 0) ? 'text-gray-900' : 'text-gray-400'">
                       <option value="">{{ $t('configEditor.hostConfig.selectKey') }}</option>
-                      <option v-for="key in keyStore.keys" :key="key.id" :value="`~/.ssh/${key.name}`">
-                        {{ key.name }} ({{ key.key_type.toUpperCase() }})
-                      </option>
+                      <optgroup :label="$t('configEditor.hostConfig.identityGroups.softwareKeys')">
+                        <option v-for="key in keyStore.keys" :key="`soft-${key.id}`" :value="`~/.ssh/${key.name}`">
+                          {{ key.name }} ({{ key.key_type.toUpperCase() }})
+                        </option>
+                      </optgroup>
+                      <optgroup :label="$t('configEditor.hostConfig.identityGroups.sshDirKeys')">
+                        <option v-for="f in sshDirKeys" :key="`fs-${f}`" :value="`~/.ssh/${f}`">
+                          {{ f }}
+                        </option>
+                      </optgroup>
                     </select>
-                    <BaseButton size="sm" variant="secondary" @click="browseIdentityFile">
-                      <FolderOpenIcon class="h-4 w-4" />
+                    <BaseButton size="sm" variant="secondary" @click="refreshSshDirKeys" :disabled="sshDirLoading">
+                      <ArrowPathIcon class="h-4 w-4" />
                     </BaseButton>
                   </div>
                 </div>
@@ -250,7 +257,6 @@ import {
   ServerIcon,
   Cog6ToothIcon,
   ClipboardIcon,
-  FolderOpenIcon,
   CheckIcon,
   DocumentTextIcon
 } from '@heroicons/vue/24/outline'
@@ -292,6 +298,22 @@ const currentConfigPath = ref('')
 // 删除确认对话框状态
 const showDeleteConfirm = ref(false)
 const pendingDeleteIndex = ref<number | null>(null)
+
+// ~/.ssh 目录已有密钥
+const sshDirKeys = ref<string[]>([])
+const sshDirLoading = ref(false)
+const refreshSshDirKeys = async () => {
+  try {
+    sshDirLoading.value = true
+    const list = await invoke<string[]>('list_identity_files', { dirPath: undefined })
+    sshDirKeys.value = Array.isArray(list) ? list : []
+  } catch (e) {
+    console.error('列出 ~/.ssh 密钥失败', e)
+    sshDirKeys.value = []
+  } finally {
+    sshDirLoading.value = false
+  }
+}
 
 // 选中的主机配置
 const selectedHost = computed(() => {
@@ -453,11 +475,8 @@ const updateOptionValue = (index: number, newValue: string) => {
   }
 }
 
-// 浏览身份文件
-const browseIdentityFile = () => {
-  // TODO: 实现文件浏览器
-  console.log(t('configEditor.messages.featureNotImplemented'))
-}
+// 保留占位：浏览身份文件（暂未实现）
+// 移除未使用的函数以消除告警
 
 // 加载配置
 const loadConfig = async () => {
@@ -537,6 +556,7 @@ const parseRawConfig = () => {
 onMounted(async () => {
   await keyStore.loadKeys()
   await loadConfig()
+  await refreshSshDirKeys()
   try {
     const home = await homeDir()
     currentConfigPath.value = await join(home, '.ssh', 'config')

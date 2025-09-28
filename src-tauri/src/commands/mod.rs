@@ -558,3 +558,9 @@ pub async fn save_ssh_config(
 pub async fn read_ssh_config(file_path: Option<String>) -> Result<crate::types::SshConfig, String> {
     SshConfigService::read_config(file_path.as_deref()).map_err(|e| e.to_string())
 }
+
+// 列出 ~/.ssh 目录下的私钥文件
+#[tauri::command]
+pub async fn list_identity_files(dir_path: Option<String>) -> Result<Vec<String>, String> {
+    SshConfigService::list_identity_files(dir_path.as_deref()).map_err(|e| e.to_string())
+}

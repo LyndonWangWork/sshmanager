@@ -32,6 +32,7 @@ pub fn run() {
             write_file_content,
             save_ssh_config,
             read_ssh_config,
+            list_identity_files,
             import_keys,
             export_all_keys,
             reset_all_data,
