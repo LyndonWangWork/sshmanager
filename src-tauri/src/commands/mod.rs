@@ -1,6 +1,7 @@
 use crate::services::{CryptoService, SshConfigService, SshKeyService};
 use crate::storage::StorageService;
 use crate::types::{KeyGenerationParams, SshKeyPair};
+use std::process::Command;
 use std::sync::Mutex;
 use tauri::State;
 
@@ -569,4 +570,35 @@ pub async fn list_identity_files(dir_path: Option<String>) -> Result<Vec<String>
 #[tauri::command]
 pub async fn check_file_exists(file_path: String) -> Result<bool, String> {
     Ok(std::path::Path::new(&file_path).exists())
+}
+
+// 打开配置目录 ~/.ssh
+#[tauri::command]
+pub async fn open_config_directory(_app: tauri::AppHandle) -> Result<bool, String> {
+    let home = dirs::home_dir().ok_or_else(|| "无法获取用户主目录".to_string())?;
+    let ssh_dir = home.join(".ssh");
+    #[cfg(target_os = "windows")]
+    {
+        Command::new("explorer")
+            .arg(ssh_dir)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+        return Ok(true);
+    }
+    #[cfg(target_os = "macos")]
+    {
+        Command::new("open")
+            .arg(ssh_dir)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+        return Ok(true);
+    }
+    #[cfg(all(unix, not(target_os = "macos")))]
+    {
+        Command::new("xdg-open")
+            .arg(ssh_dir)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+        return Ok(true);
+    }
 }

@@ -174,6 +174,7 @@ const zh = {
     title: 'SSH配置编辑',
     reload: '重新加载',
     saveConfig: '保存配置',
+    openConfigDir: '打开配置目录',
     hostConfig: {
       title: '主机配置',
       add: '添加',
@@ -546,6 +547,7 @@ const en = {
     title: 'SSH Config Editor',
     reload: 'Reload',
     saveConfig: 'Save Config',
+    openConfigDir: 'Open Config Directory',
     hostConfig: {
       title: 'Host Configuration',
       add: 'Add',

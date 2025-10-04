@@ -7,6 +7,10 @@
         <p class="text-xs text-gray-500 mt-1 break-all" v-if="currentConfigPath">{{ currentConfigPath }}</p>
       </div>
       <div class="flex items-center space-x-4">
+        <BaseButton variant="secondary" @click="openConfigDirectory">
+          <FolderIcon class="h-4 w-4 mr-2" />
+          {{ $t('configEditor.openConfigDir') }}
+        </BaseButton>
         <BaseButton variant="secondary" @click="loadConfig" :disabled="isLoading">
           <ArrowPathIcon class="h-4 w-4 mr-2" />
           {{ $t('configEditor.reload') }}
@@ -214,6 +218,7 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { useToast } from '@/composables/useToast'
 import { invoke } from '@tauri-apps/api/core'
 import { homeDir, join } from '@tauri-apps/api/path'
+// 通过后端命令打开目录，避免直接依赖前端 opener API
 import {
   ArrowPathIcon,
   DocumentCheckIcon,
@@ -223,7 +228,8 @@ import {
   Cog6ToothIcon,
   ClipboardIcon,
   CheckIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  FolderIcon
 } from '@heroicons/vue/24/outline'
 
 const { t } = useI18n()
@@ -578,4 +584,14 @@ onMounted(async () => {
 })
 
 onUnmounted(() => { })
+
+// 打开配置文件所在目录（跨平台）
+const openConfigDirectory = async () => {
+  try {
+    await invoke('open_config_directory')
+  } catch (error) {
+    console.error('打开配置目录失败', error)
+    toastError(`${t('configEditor.messages.loadError')} ${error}`)
+  }
+}
 </script>

@@ -12,6 +12,7 @@
     "dialog:allow-confirm",
     "dialog:default",
     "process:default",
+    "opener:default",
     "core:path:default",
     "core:path:allow-join",
     "core:path:allow-resolve-directory"
