@@ -564,3 +564,9 @@ pub async fn read_ssh_config(file_path: Option<String>) -> Result<crate::types::
 pub async fn list_identity_files(dir_path: Option<String>) -> Result<Vec<String>, String> {
     SshConfigService::list_identity_files(dir_path.as_deref()).map_err(|e| e.to_string())
 }
+
+// 检查文件是否存在
+#[tauri::command]
+pub async fn check_file_exists(file_path: String) -> Result<bool, String> {
+    Ok(std::path::Path::new(&file_path).exists())
+}

@@ -1,166 +1,130 @@
-use uuid::Uuid;
+use crate::error::{AppError, AppResult};
+use crate::types::{KeyGenerationParams, SshKeyPair, SshKeyType};
 use chrono::Utc;
 use sha2::{Digest, Sha256};
-use crate::types::{SshKeyPair, SshKeyType, KeyGenerationParams};
-use crate::error::{AppError, AppResult};
+use uuid::Uuid;
 
-// 导入ring相关库
-use ring::{rand, signature};
-use ring::signature::KeyPair;
-// 导入RSA相关库
-use rsa::{RsaPrivateKey, RsaPublicKey};
-use rsa::pkcs1::{EncodeRsaPrivateKey, EncodeRsaPublicKey};
-use rand_core::OsRng;
-// 导入base64编码库
-use base64::{Engine as _, engine::general_purpose};
+// 导入ssh-key库
+use base64::{engine::general_purpose, Engine as _};
+use ssh_key::private::{EcdsaKeypair, Ed25519Keypair, RsaKeypair};
+use ssh_key::rand_core::{CryptoRng, RngCore};
+use ssh_key::EcdsaCurve;
+use ssh_key::{LineEnding, PrivateKey, PublicKey};
+use zeroize::Zeroizing;
+
+// 简单的随机数生成器包装器
+struct SimpleRng;
+
+impl RngCore for SimpleRng {
+    fn next_u32(&mut self) -> u32 {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        use std::time::{SystemTime, UNIX_EPOCH};
+
+        let mut hasher = DefaultHasher::new();
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+            .hash(&mut hasher);
+        hasher.finish() as u32
+    }
+
+    fn next_u64(&mut self) -> u64 {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        use std::time::{SystemTime, UNIX_EPOCH};
+
+        let mut hasher = DefaultHasher::new();
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+            .hash(&mut hasher);
+        hasher.finish()
+    }
+
+    fn fill_bytes(&mut self, dest: &mut [u8]) {
+        for chunk in dest.chunks_mut(8) {
+            let mut val = self.next_u64();
+            for byte in chunk.iter_mut() {
+                *byte = val as u8;
+                val >>= 8;
+            }
+        }
+    }
+}
+
+impl CryptoRng for SimpleRng {}
 
 pub struct SshKeyService;
 
 impl SshKeyService {
-    /// 生成SSH密钥对（真实的密码学实现）
+    /// 生成SSH密钥对（使用ssh-key库）
     pub fn generate_key_pair(params: KeyGenerationParams) -> AppResult<SshKeyPair> {
+        let mut rng = SimpleRng;
+
+        // 使用ssh-key库生成密钥对
         let (private_key, public_key) = match params.key_type {
-            SshKeyType::Rsa => Self::generate_rsa_key(params.key_size)?,
-            SshKeyType::Ed25519 => Self::generate_ed25519_key()?,
-            SshKeyType::Ecdsa => Self::generate_ecdsa_key(params.key_size)?,
+            SshKeyType::Ed25519 => {
+                let ed25519_keypair = Ed25519Keypair::random(&mut rng);
+                let private_key = PrivateKey::from(ed25519_keypair);
+                let public_key = PublicKey::from(&private_key);
+                (private_key, public_key)
+            }
+            SshKeyType::Rsa => {
+                let rsa_keypair = RsaKeypair::random(&mut rng, params.key_size as usize)
+                    .map_err(|e| AppError::KeyGenerationError(format!("RSA密钥生成失败: {}", e)))?;
+                let private_key = PrivateKey::from(rsa_keypair);
+                let public_key = PublicKey::from(&private_key);
+                (private_key, public_key)
+            }
+            SshKeyType::Ecdsa => {
+                let ecdsa_keypair = match params.key_size {
+                    256 => EcdsaKeypair::random(&mut rng, EcdsaCurve::NistP256).map_err(|e| {
+                        AppError::KeyGenerationError(format!("ECDSA P-256密钥生成失败: {}", e))
+                    })?,
+                    384 => EcdsaKeypair::random(&mut rng, EcdsaCurve::NistP384).map_err(|e| {
+                        AppError::KeyGenerationError(format!("ECDSA P-384密钥生成失败: {}", e))
+                    })?,
+                    _ => {
+                        return Err(AppError::KeyGenerationError(
+                            "不支持的ECDSA密钥长度".to_string(),
+                        ))
+                    }
+                };
+                let private_key = PrivateKey::from(ecdsa_keypair);
+                let public_key = PublicKey::from(&private_key);
+                (private_key, public_key)
+            }
         };
-        
-        let fingerprint = Self::calculate_fingerprint(&public_key)?;
-        
+
+        // 生成私钥（OpenSSH格式）
+        let private_key_pem: Zeroizing<String> = private_key
+            .to_openssh(LineEnding::LF)
+            .map_err(|e| AppError::KeyGenerationError(format!("私钥格式转换失败: {}", e)))?;
+
+        // 生成公钥
+        let public_key_openssh = public_key
+            .to_openssh()
+            .map_err(|e| AppError::KeyGenerationError(format!("公钥格式转换失败: {}", e)))?;
+
+        let fingerprint = Self::calculate_fingerprint(&public_key_openssh)?;
+
         Ok(SshKeyPair {
             id: Uuid::new_v4().to_string(),
             name: params.name,
             key_type: params.key_type,
             key_size: params.key_size,
             comment: params.comment,
-            public_key,
-            private_key,
+            public_key: public_key_openssh,
+            private_key: private_key_pem.to_string(),
             fingerprint,
             created_at: Utc::now(),
             last_used: None,
         })
     }
-    
-    /// 生成真实的RSA密钥对
-    fn generate_rsa_key(bits: u32) -> AppResult<(String, String)> {
-        // 生成RSA密钥对
-        let mut rng = OsRng;
-        let private_key = RsaPrivateKey::new(&mut rng, bits as usize)
-            .map_err(|e| AppError::KeyGenerationError(format!("RSA密钥生成失败: {}", e)))?;
-        let public_key = RsaPublicKey::from(&private_key);
-        
-        // 转换为PEM格式
-        let private_key_pem = private_key.to_pkcs1_pem(rsa::pkcs8::LineEnding::LF)
-            .map_err(|e| AppError::KeyGenerationError(format!("私钥PEM格式转换失败: {}", e)))?
-            .to_string();
-        
-        // 生成OpenSSH格式的公钥
-        let public_key_bytes = public_key.to_pkcs1_der()
-            .map_err(|e| AppError::KeyGenerationError(format!("公钥DER格式转换失败: {}", e)))?;
-        
-        let public_key_openssh = format!(
-            "ssh-rsa {}",
-            general_purpose::STANDARD.encode(&public_key_bytes.as_bytes())
-        );
-        
-        Ok((private_key_pem, public_key_openssh))
-    }
-    
-    /// 生成真实的Ed25519密钥对
-    fn generate_ed25519_key() -> AppResult<(String, String)> {
-        // 生成Ed25519密钥对
-        let rng = rand::SystemRandom::new();
-        let pkcs8_bytes = signature::Ed25519KeyPair::generate_pkcs8(&rng)
-            .map_err(|e| AppError::KeyGenerationError(format!("Ed25519密钥生成失败: {:?}", e)))?;
-        
-        // 提取公钥
-        let key_pair = signature::Ed25519KeyPair::from_pkcs8(pkcs8_bytes.as_ref())
-            .map_err(|e| AppError::KeyGenerationError(format!("Ed25519密钥解析失败: {:?}", e)))?;
-        let public_key_bytes = key_pair.public_key().as_ref();
-        
-        // OpenSSH格式的Ed25519私钥
-        let private_key_openssh = format!(
-            "-----BEGIN OPENSSH PRIVATE KEY-----\n{}\n-----END OPENSSH PRIVATE KEY-----",
-            general_purpose::STANDARD.encode(&pkcs8_bytes)
-        );
-        
-        // OpenSSH格式的公钥
-        let public_key_openssh = format!(
-            "ssh-ed25519 {}",
-            general_purpose::STANDARD.encode(public_key_bytes)
-        );
-        
-        Ok((private_key_openssh, public_key_openssh))
-    }
-    
-    /// 生成真实的ECDSA密钥对
-    fn generate_ecdsa_key(bits: u32) -> AppResult<(String, String)> {
-        // 生成ECDSA密钥对
-        let rng = rand::SystemRandom::new();
-        
-        match bits {
-            256 => {
-                // 生成P-256曲线的ECDSA密钥对
-                let pkcs8_bytes = signature::EcdsaKeyPair::generate_pkcs8(
-                    &signature::ECDSA_P256_SHA256_ASN1_SIGNING,
-                    &rng,
-                ).map_err(|e| AppError::KeyGenerationError(format!("ECDSA P-256密钥生成失败: {:?}", e)))?;
-                
-                let key_pair = signature::EcdsaKeyPair::from_pkcs8(
-                    &signature::ECDSA_P256_SHA256_ASN1_SIGNING,
-                    pkcs8_bytes.as_ref(),
-                    &rng,
-                ).map_err(|e| AppError::KeyGenerationError(format!("ECDSA P-256密钥解析失败: {:?}", e)))?;
-                
-                let public_key_bytes = key_pair.public_key().as_ref();
-                
-                // PEM格式的私钥
-                let private_key_pem = format!(
-                    "-----BEGIN EC PRIVATE KEY-----\n{}\n-----END EC PRIVATE KEY-----",
-                    general_purpose::STANDARD.encode(&pkcs8_bytes)
-                );
-                
-                // OpenSSH格式的公钥
-                let public_key_openssh = format!(
-                    "ecdsa-sha2-nistp256 {}",
-                    general_purpose::STANDARD.encode(public_key_bytes)
-                );
-                
-                Ok((private_key_pem, public_key_openssh))
-            },
-            384 => {
-                // 生成P-384曲线的ECDSA密钥对
-                let pkcs8_bytes = signature::EcdsaKeyPair::generate_pkcs8(
-                    &signature::ECDSA_P384_SHA384_ASN1_SIGNING,
-                    &rng,
-                ).map_err(|e| AppError::KeyGenerationError(format!("ECDSA P-384密钥生成失败: {:?}", e)))?;
-                
-                let key_pair = signature::EcdsaKeyPair::from_pkcs8(
-                    &signature::ECDSA_P384_SHA384_ASN1_SIGNING,
-                    pkcs8_bytes.as_ref(),
-                    &rng,
-                ).map_err(|e| AppError::KeyGenerationError(format!("ECDSA P-384密钥解析失败: {:?}", e)))?;
-                
-                let public_key_bytes = key_pair.public_key().as_ref();
-                
-                // PEM格式的私钥
-                let private_key_pem = format!(
-                    "-----BEGIN EC PRIVATE KEY-----\n{}\n-----END EC PRIVATE KEY-----",
-                    general_purpose::STANDARD.encode(&pkcs8_bytes)
-                );
-                
-                // OpenSSH格式的公钥
-                let public_key_openssh = format!(
-                    "ecdsa-sha2-nistp384 {}",
-                    general_purpose::STANDARD.encode(public_key_bytes)
-                );
-                
-                Ok((private_key_pem, public_key_openssh))
-            },
-            _ => Err(AppError::KeyGenerationError("不支持的ECDSA密钥长度".to_string()))
-        }
-    }
-    
+
     /// 计算密钥指纹（SHA256）
     fn calculate_fingerprint(public_key: &str) -> AppResult<String> {
         // 提取base64部分
@@ -168,14 +132,52 @@ impl SshKeyService {
         if parts.len() < 2 {
             return Err(AppError::KeyGenerationError("无效的公钥格式".to_string()));
         }
-        
-        let key_data = general_purpose::STANDARD.decode(parts[1])
+
+        let key_data = general_purpose::STANDARD
+            .decode(parts[1])
             .map_err(|_| AppError::KeyGenerationError("公钥解码失败".to_string()))?;
-        
+
         let mut hasher = Sha256::new();
         hasher.update(&key_data);
         let hash = hasher.finalize();
-        
-        Ok(format!("SHA256:{}", general_purpose::STANDARD.encode(&hash)))
+
+        Ok(format!(
+            "SHA256:{}",
+            general_purpose::STANDARD.encode(&hash)
+        ))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_ed25519_key_generation() {
+        let params = KeyGenerationParams {
+            name: "test-key".to_string(),
+            key_type: SshKeyType::Ed25519,
+            key_size: 256,
+            comment: "test comment".to_string(),
+            passphrase: None,
+        };
+
+        let result = SshKeyService::generate_key_pair(params);
+        assert!(result.is_ok());
+
+        let key_pair = result.unwrap();
+        assert_eq!(key_pair.key_type, SshKeyType::Ed25519);
+        assert_eq!(key_pair.key_size, 256);
+        assert!(key_pair
+            .private_key
+            .contains("-----BEGIN OPENSSH PRIVATE KEY-----"));
+        assert!(key_pair
+            .private_key
+            .contains("-----END OPENSSH PRIVATE KEY-----"));
+        assert!(key_pair.public_key.starts_with("ssh-ed25519 "));
+
+        // 验证私钥格式
+        println!("Generated private key:\n{}", key_pair.private_key);
+        println!("Generated public key: {}", key_pair.public_key);
     }
 }

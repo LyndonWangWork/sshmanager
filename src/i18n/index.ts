@@ -244,7 +244,8 @@ const zh = {
       saveSuccess: '配置保存成功',
       copySuccess: '配置已复制到剪贴板',
       copyError: '复制失败:',
-      featureNotImplemented: '功能待实现'
+      featureNotImplemented: '功能待实现',
+      fileExists: '文件已存在'
     },
     empty: '请选择一个主机配置或添加新的主机'
   },
@@ -615,7 +616,8 @@ const en = {
       saveSuccess: 'Configuration saved successfully',
       copySuccess: 'Configuration copied to clipboard',
       copyError: 'Copy failed:',
-      featureNotImplemented: 'Feature not implemented yet'
+      featureNotImplemented: 'Feature not implemented yet',
+      fileExists: 'File already exists'
     },
     empty: 'Please select a host configuration or add a new host'
   },

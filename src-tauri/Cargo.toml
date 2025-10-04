@@ -30,7 +30,7 @@ chrono = { version = "0.4", features = ["serde"] }
 thiserror = "1.0"
 dirs = "4.0"
 rand = "0.8"
-rand_core = "0.6"
+rand_core = { version = "0.9", features = ["os_rng"] }
 sha2 = "0.10"
 base64 = "0.21"
 # 密码学依赖
@@ -39,6 +39,7 @@ rsa = "0.9"
 aes-gcm = "0.10"
 pbkdf2 = "0.12"
 zeroize = { version = "1.5", features = ["zeroize_derive"] }
+ssh-key = { version = "0.7.0-rc.3", features = ["ed25519", "rsa", "p256", "p384", "p521", "encryption", "rand_core"] }
 
 [dev-dependencies]
 tempfile = "3"

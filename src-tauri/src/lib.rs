@@ -1,16 +1,16 @@
 pub mod commands;
-pub mod services;
-pub mod types;
 pub mod error;
+pub mod services;
 pub mod storage;
+pub mod types;
 
 #[cfg(test)]
 mod tests;
 
 use commands::*;
 use services::CryptoService;
-use storage::StorageService;
 use std::sync::Mutex;
+use storage::StorageService;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -19,7 +19,9 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_process::init())
         .manage(Mutex::new(CryptoService::new()))
-        .manage(Mutex::new(StorageService::new().expect("存储服务初始化失败")))
+        .manage(Mutex::new(
+            StorageService::new().expect("存储服务初始化失败"),
+        ))
         .invoke_handler(tauri::generate_handler![
             is_initialized,
             initialize_app,
@@ -33,6 +35,7 @@ pub fn run() {
             save_ssh_config,
             read_ssh_config,
             list_identity_files,
+            check_file_exists,
             import_keys,
             export_all_keys,
             reset_all_data,

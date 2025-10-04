@@ -512,6 +512,50 @@ const cleanupEmptyOptions = () => {
   }
 }
 
+// 检查并导出软件内密钥到 ~/.ssh 目录
+const exportSoftwareKeys = async () => {
+  const home = await homeDir()
+  const sshDir = await join(home, '.ssh')
+
+  // 收集所有使用的软件内密钥
+  const usedKeys = new Set<string>()
+  for (const host of sshConfig.hosts) {
+    if (host.identity_file && host.identity_file.startsWith('~/.ssh/')) {
+      const fileName = host.identity_file.replace('~/.ssh/', '')
+      // 检查是否是软件内密钥（通过 keyStore.keys 查找）
+      const key = keyStore.keys.find(k => k.name === fileName)
+      if (key) {
+        usedKeys.add(key.id)
+      }
+    }
+  }
+
+  // 导出每个使用的密钥
+  for (const keyId of usedKeys) {
+    const key = keyStore.keys.find(k => k.id === keyId)
+    if (!key) continue
+
+    const privateKeyPath = await join(sshDir, key.name)
+    const publicKeyPath = await join(sshDir, `${key.name}.pub`)
+
+    // 检查文件是否已存在
+    const privateExists = await invoke<boolean>('check_file_exists', { filePath: privateKeyPath })
+    const publicExists = await invoke<boolean>('check_file_exists', { filePath: publicKeyPath })
+
+    if (privateExists || publicExists) {
+      const existingFiles = []
+      if (privateExists) existingFiles.push(key.name)
+      if (publicExists) existingFiles.push(`${key.name}.pub`)
+
+      toastError(`${t('configEditor.messages.fileExists')}: ${existingFiles.join(', ')}`)
+      throw new Error(`文件已存在: ${existingFiles.join(', ')}`)
+    }
+
+    // 导出密钥
+    await invoke('export_key', { keyId, exportPath: privateKeyPath })
+  }
+}
+
 // 保存配置
 const saveConfig = async () => {
   isLoading.value = true
@@ -519,6 +563,8 @@ const saveConfig = async () => {
   try {
     if (!showRawEditor.value) {
       cleanupEmptyOptions()
+      // 在保存前导出软件内密钥
+      await exportSoftwareKeys()
     }
     const content = showRawEditor.value ? rawConfigText.value : generatedConfig.value
     // file_path 可留空使用默认 ~/.ssh/config；保留策略可从应用配置获取，这里先用 10
