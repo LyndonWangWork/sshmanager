@@ -7,62 +7,41 @@ use uuid::Uuid;
 // 导入ssh-key库
 use base64::{engine::general_purpose, Engine as _};
 use ssh_key::private::{EcdsaKeypair, Ed25519Keypair, RsaKeypair};
-use ssh_key::rand_core::{CryptoRng, RngCore};
 use ssh_key::EcdsaCurve;
 use ssh_key::{LineEnding, PrivateKey, PublicKey};
 use zeroize::Zeroizing;
 
-// 简单的随机数生成器包装器
-struct SimpleRng;
+// 为 ssh_key 的 RNG 接口提供基于 OS 的加密安全 RNG 适配器
+use ssh_key::rand_core::{CryptoRng as SshCryptoRng, RngCore as SshRngCore};
 
-impl RngCore for SimpleRng {
+struct OsCryptoRng;
+
+impl SshRngCore for OsCryptoRng {
     fn next_u32(&mut self) -> u32 {
-        use std::collections::hash_map::DefaultHasher;
-        use std::hash::{Hash, Hasher};
-        use std::time::{SystemTime, UNIX_EPOCH};
-
-        let mut hasher = DefaultHasher::new();
-        SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_nanos()
-            .hash(&mut hasher);
-        hasher.finish() as u32
+        let mut buf = [0u8; 4];
+        getrandom::getrandom(&mut buf).expect("OS RNG failure");
+        u32::from_le_bytes(buf)
     }
 
     fn next_u64(&mut self) -> u64 {
-        use std::collections::hash_map::DefaultHasher;
-        use std::hash::{Hash, Hasher};
-        use std::time::{SystemTime, UNIX_EPOCH};
-
-        let mut hasher = DefaultHasher::new();
-        SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_nanos()
-            .hash(&mut hasher);
-        hasher.finish()
+        let mut buf = [0u8; 8];
+        getrandom::getrandom(&mut buf).expect("OS RNG failure");
+        u64::from_le_bytes(buf)
     }
 
     fn fill_bytes(&mut self, dest: &mut [u8]) {
-        for chunk in dest.chunks_mut(8) {
-            let mut val = self.next_u64();
-            for byte in chunk.iter_mut() {
-                *byte = val as u8;
-                val >>= 8;
-            }
-        }
+        getrandom::getrandom(dest).expect("OS RNG failure");
     }
 }
 
-impl CryptoRng for SimpleRng {}
+impl SshCryptoRng for OsCryptoRng {}
 
 pub struct SshKeyService;
 
 impl SshKeyService {
     /// 生成SSH密钥对（使用ssh-key库）
     pub fn generate_key_pair(params: KeyGenerationParams) -> AppResult<SshKeyPair> {
-        let mut rng = SimpleRng;
+        let mut rng = OsCryptoRng;
 
         // 使用ssh-key库生成密钥对
         let (private_key, public_key) = match params.key_type {

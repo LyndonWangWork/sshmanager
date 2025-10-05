@@ -3,6 +3,7 @@ pub mod error;
 pub mod services;
 pub mod storage;
 pub mod types;
+pub mod utils;
 
 #[cfg(test)]
 mod tests;

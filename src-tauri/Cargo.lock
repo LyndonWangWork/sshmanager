@@ -4395,6 +4395,7 @@ dependencies = [
  "base64 0.21.7",
  "chrono",
  "dirs 4.0.0",
+ "getrandom 0.2.16",
  "pbkdf2 0.12.2",
  "rand 0.8.5",
  "rand_core 0.9.3",
