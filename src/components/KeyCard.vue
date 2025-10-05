@@ -84,7 +84,7 @@
         </p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+      <div class="grid grid-cols-1 md:grid-cols-1 gap-4 text-sm">
         <div class="flex items-center space-x-2 text-tech-500">
           <div class="w-2 h-2 bg-success-400 rounded-full"></div>
           <span>{{ $t('keyCard.labels.createdTime') }}: {{ formatDate(keyData.created_at) }}</span>
