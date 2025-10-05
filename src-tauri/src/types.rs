@@ -1,13 +1,13 @@
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum SshKeyType {
-    #[serde(rename = "RSA")]
+    #[serde(rename = "RSA", alias = "Rsa")]
     Rsa,
     #[serde(rename = "Ed25519")]
     Ed25519,
-    #[serde(rename = "ECDSA")]
+    #[serde(rename = "ECDSA", alias = "Ecdsa")]
     Ecdsa,
 }
 
