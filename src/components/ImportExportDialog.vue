@@ -7,69 +7,52 @@
           <h3 class="text-lg font-semibold text-gray-900">
             {{ mode === 'import' ? $t('importExport.dialog.importTitle') : $t('importExport.dialog.exportTitle') }}
           </h3>
-          <button
-            @click="$emit('close')"
-            class="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          >
+          <button @click="$emit('close')" class="p-2 hover:bg-gray-100 rounded-full transition-colors">
             <XMarkIcon class="h-5 w-5 text-gray-400" />
           </button>
         </div>
       </div>
-      
+
       <!-- 对话框内容 -->
       <div class="px-6 py-4">
         <div v-if="mode === 'import'" class="space-y-4">
           <!-- 导入方式选择 -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.import.method.title') }}</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.import.method.title')
+              }}</label>
             <div class="space-y-2">
               <label class="flex items-center">
-                <input
-                  v-model="importMethod"
-                  type="radio"
-                  value="file"
-                  class="mr-3"
-                />
+                <input v-model="importMethod" type="radio" value="file" class="mr-3" />
                 <span class="text-sm">{{ $t('importExport.import.method.file') }}</span>
               </label>
               <label class="flex items-center">
-                <input
-                  v-model="importMethod"
-                  type="radio"
-                  value="text"
-                  class="mr-3"
-                />
+                <input v-model="importMethod" type="radio" value="text" class="mr-3" />
                 <span class="text-sm">{{ $t('importExport.import.method.text') }}</span>
               </label>
             </div>
           </div>
-          
+
           <!-- 文件选择 -->
           <div v-if="importMethod === 'file'">
-            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.import.file.label') }}</label>
-            <input
-              ref="fileInput"
-              type="file"
-              accept=".json,.key,.pub,.pem,application/json,text/plain"
+            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.import.file.label')
+              }}</label>
+            <input ref="fileInput" type="file" accept=".json,.key,.pub,.pem,application/json,text/plain"
               @change="handleFileSelect"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
-          
+
           <!-- 文本输入 -->
           <div v-if="importMethod === 'text'">
-            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.import.text.label') }}</label>
-            <textarea
-              v-model="importText"
-              rows="8"
-              :placeholder="$t('importExport.import.text.placeholder')"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-            ></textarea>
+            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.import.text.label')
+              }}</label>
+            <textarea v-model="importText" rows="8" :placeholder="$t('importExport.import.text.placeholder')"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"></textarea>
           </div>
-          
+
           <!-- 导入预览 -->
           <div v-if="previewKeys.length > 0" class="bg-gray-50 rounded-lg p-4">
-            <h4 class="text-sm font-medium text-gray-900 mb-2">{{ $t('importExport.import.preview.title') }} ({{ previewKeys.length }} {{ $t('importExport.import.preview.count') }})</h4>
+            <h4 class="text-sm font-medium text-gray-900 mb-2">{{ $t('importExport.import.preview.title') }} ({{
+              previewKeys.length }} {{ $t('importExport.import.preview.count') }})</h4>
             <div class="space-y-1">
               <div v-for="key in previewKeys" :key="key.id" class="text-sm text-gray-600">
                 <span class="font-medium">{{ key.name }}</span>
@@ -78,40 +61,31 @@
             </div>
           </div>
         </div>
-        
+
         <div v-else class="space-y-4">
           <!-- 导出选项 -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.export.scope.title') }}</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.export.scope.title')
+              }}</label>
             <div class="space-y-2">
               <label class="flex items-center">
-                <input
-                  v-model="exportScope"
-                  type="radio"
-                  value="all"
-                  class="mr-3"
-                />
-                <span class="text-sm">{{ $t('importExport.export.scope.all') }} ({{ keyStore.keys.length }} {{ $t('importExport.import.preview.count') }})</span>
+                <input v-model="exportScope" type="radio" value="all" class="mr-3" />
+                <span class="text-sm">{{ $t('importExport.export.scope.all') }} ({{ keyStore.keys.length }} {{
+                  $t('importExport.import.preview.count') }})</span>
               </label>
               <label class="flex items-center">
-                <input
-                  v-model="exportScope"
-                  type="radio"
-                  value="selected"
-                  class="mr-3"
-                />
+                <input v-model="exportScope" type="radio" value="selected" class="mr-3" />
                 <span class="text-sm">{{ $t('importExport.export.scope.selected') }}</span>
               </label>
             </div>
           </div>
-          
+
           <!-- 导出格式 -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.export.format.title') }}</label>
-            <select
-              v-model="exportFormat"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
+            <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.export.format.title')
+              }}</label>
+            <select v-model="exportFormat"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="json">{{ $t('importExport.export.format.json') }}</option>
               <option value="openssh">{{ $t('importExport.export.format.openssh') }}</option>
               <option value="pem">{{ $t('importExport.export.format.pem') }}</option>
@@ -120,50 +94,34 @@
               {{ $t('importExport.export.format.description') }}
             </p>
           </div>
-          
+
           <!-- 安全选项 -->
           <div>
             <label class="flex items-center">
-              <input
-                v-model="includePrivateKeys"
-                type="checkbox"
-                class="mr-3"
-              />
+              <input v-model="includePrivateKeys" type="checkbox" class="mr-3" />
               <span class="text-sm">{{ $t('importExport.export.security.includePrivate') }}</span>
             </label>
           </div>
-          
+
           <!-- 导出预览 -->
           <div v-if="exportPreview" class="bg-gray-50 rounded-lg p-4">
             <h4 class="text-sm font-medium text-gray-900 mb-2">{{ $t('importExport.export.preview.title') }}</h4>
-            <textarea
-              :value="exportPreview"
-              readonly
-              rows="6"
-              class="w-full text-xs font-mono bg-white border rounded p-2 resize-none"
-            ></textarea>
+            <textarea :value="exportPreview" readonly rows="6"
+              class="w-full text-xs font-mono bg-white border rounded p-2 resize-none"></textarea>
           </div>
         </div>
       </div>
-      
+
       <!-- 对话框底部 -->
       <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
         <BaseButton variant="secondary" @click="$emit('close')">
           {{ $t('importExport.dialog.cancel') }}
         </BaseButton>
-        <BaseButton
-          v-if="mode === 'import'"
-          @click="handleImport"
-          :disabled="!canImport || isLoading"
-        >
+        <BaseButton v-if="mode === 'import'" @click="handleImport" :disabled="!canImport || isLoading">
           <span v-if="isLoading">{{ $t('importExport.dialog.importing') }}</span>
           <span v-else>{{ $t('importExport.dialog.importAction') }}</span>
         </BaseButton>
-        <BaseButton
-          v-else
-          @click="handleExport"
-          :disabled="!canExport || isLoading"
-        >
+        <BaseButton v-else @click="handleExport" :disabled="!canExport || isLoading">
           <span v-if="isLoading">{{ $t('importExport.dialog.exporting') }}</span>
           <span v-else>{{ $t('importExport.dialog.exportAction') }}</span>
         </BaseButton>
@@ -232,11 +190,11 @@ const canExport = computed(() => {
 
 const exportPreview = computed(() => {
   if (!canExport.value) return ''
-  
-  const keysToExport = exportScope.value === 'all' 
-    ? keyStore.keys 
+
+  const keysToExport = exportScope.value === 'all'
+    ? keyStore.keys
     : props.selectedKeys
-  
+
   if (exportFormat.value === 'json') {
     const data = {
       version: '1.0',
@@ -254,7 +212,7 @@ const exportPreview = computed(() => {
       preview += `# ${t('importExport.export.preview.keyName')} ${key.name}\n`
       preview += `# ${t('importExport.export.preview.keyType')} ${key.key_type}\n`
       preview += `# ${t('importExport.export.preview.publicKeyFile')} (${key.name}.pub):\n`
-      preview += key.public_key.substring(0, 50) + '...'  
+      preview += key.public_key.substring(0, 50) + '...'
       if (includePrivateKeys.value) {
         preview += `\n\n# ${t('importExport.export.preview.privateKeyFile')} (${key.name}):\n`
         preview += key.private_key.substring(0, 50) + '...'
@@ -281,7 +239,7 @@ const exportPreview = computed(() => {
     }
     return preview
   }
-  
+
   return `${t('importExport.export.preview.willExport')} ${keysToExport.length} ${t('importExport.export.preview.keys')}`
 })
 
@@ -292,15 +250,15 @@ const handleFileSelect = (event: Event) => {
     previewKeys.value = []
     return
   }
-  
+
   const reader = new FileReader()
   reader.onload = (e) => {
     try {
       const content = e.target?.result as string
       const fileName = file.name.toLowerCase()
-      
+
       let keysArray: any[] = []
-      
+
       // 根据文件扩展名和内容判断文件类型
       if (fileName.endsWith('.pub')) {
         // SSH公钥文件
@@ -312,24 +270,24 @@ const handleFileSelect = (event: Event) => {
         // JSON格式文件
         keysArray = parseJsonFile(content)
       }
-      
+
       // 验证密钥对象的必要字段
-      const validKeys = keysArray.filter(key => 
-        key && 
-        typeof key === 'object' && 
-        key.id && 
-        key.name && 
+      const validKeys = keysArray.filter(key =>
+        key &&
+        typeof key === 'object' &&
+        key.id &&
+        key.name &&
         key.key_type
       )
-      
+
       if (validKeys.length === 0) {
         emit('error', t('importExport.messages.noValidKeys'))
         previewKeys.value = []
         return
       }
-      
+
       previewKeys.value = validKeys
-      
+
       // 成功解析后给用户反馈
       if (validKeys.length !== keysArray.length) {
         emit('error', `${t('importExport.messages.parseWarning')} ${keysArray.length - validKeys.length} ${t('importExport.messages.invalidKeysIgnored')}`)
@@ -340,23 +298,23 @@ const handleFileSelect = (event: Event) => {
       previewKeys.value = []
     }
   }
-  
+
   reader.onerror = () => {
     emit('error', t('importExport.messages.fileReadError'))
     previewKeys.value = []
   }
-  
+
   reader.readAsText(file)
 }
 
 // 直接解析文本输入的函数
 const parseTextInput = (text: string): SshKeyPair[] => {
   if (!text.trim()) return []
-  
+
   try {
     const data = JSON.parse(text)
     let keysArray: any[] = []
-    
+
     if (data.keys && Array.isArray(data.keys)) {
       // 标准导出格式：{ keys: [...] }
       keysArray = data.keys
@@ -369,13 +327,13 @@ const parseTextInput = (text: string): SshKeyPair[] => {
     } else {
       return []
     }
-    
+
     // 验证密钥对象的必要字段
-    return keysArray.filter(key => 
-      key && 
-      typeof key === 'object' && 
-      key.id && 
-      key.name && 
+    return keysArray.filter(key =>
+      key &&
+      typeof key === 'object' &&
+      key.id &&
+      key.name &&
       key.key_type
     )
   } catch {
@@ -386,7 +344,7 @@ const parseTextInput = (text: string): SshKeyPair[] => {
 // 解析JSON文件
 const parseJsonFile = (content: string): any[] => {
   const data = JSON.parse(content)
-  
+
   if (data.keys && Array.isArray(data.keys)) {
     // 标准导出格式：{ keys: [...] }
     return data.keys
@@ -405,19 +363,19 @@ const parseJsonFile = (content: string): any[] => {
 const parsePublicKeyFile = (content: string, fileName: string): any[] => {
   const lines = content.split('\n').filter(line => line.trim())
   const keys: any[] = []
-  
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim()
     if (!line) continue
-    
+
     try {
       const parts = line.split(' ')
       if (parts.length < 2) continue
-      
+
       const keyType = parts[0]
       const keyData = parts[1]
       const comment = parts.slice(2).join(' ') || ''
-      
+
       // 推断密钥类型
       let normalizedKeyType = 'Unknown'
       if (keyType.includes('rsa')) {
@@ -427,11 +385,11 @@ const parsePublicKeyFile = (content: string, fileName: string): any[] => {
       } else if (keyType.includes('ecdsa')) {
         normalizedKeyType = 'Ecdsa'
       }
-      
+
       // 生成密钥名称
       const baseName = fileName.replace(/\.pub$/, '').replace(/^.*[\\\/]/, '')
       const keyName = comment || baseName || `imported_key_${Date.now()}`
-      
+
       keys.push({
         id: `imported_${Date.now()}_${i}`,
         name: keyName,
@@ -447,14 +405,14 @@ const parsePublicKeyFile = (content: string, fileName: string): any[] => {
       console.warn(`${t('importExport.messages.parseError')}${i + 1} ${t('common.line')}:`, error)
     }
   }
-  
+
   return keys
 }
 
 // 解析SSH私钥文件 (.key 或无扩展名)
 const parsePrivateKeyFile = (content: string, fileName: string): any[] => {
   const keys: any[] = []
-  
+
   try {
     // 检测私钥类型
     let keyType = 'Unknown'
@@ -465,11 +423,11 @@ const parsePrivateKeyFile = (content: string, fileName: string): any[] => {
     } else if (content.includes('BEGIN EC PRIVATE KEY') || content.includes('ecdsa')) {
       keyType = 'Ecdsa'
     }
-    
+
     // 生成密钥名称
     const baseName = fileName.replace(/\.(key|pem)$/, '').replace(/^.*[\\\/]/, '')
     const keyName = baseName || `imported_private_key_${Date.now()}`
-    
+
     keys.push({
       id: `imported_${Date.now()}`,
       name: keyName,
@@ -484,7 +442,7 @@ const parsePrivateKeyFile = (content: string, fileName: string): any[] => {
   } catch (error) {
     console.warn(t('importExport.messages.parseError'), error)
   }
-  
+
   return keys
 }
 
@@ -533,12 +491,12 @@ watch(importMethod, (newMethod) => {
 // 处理导入
 const handleImport = async () => {
   if (!canImport.value) return
-  
+
   isLoading.value = true
-  
+
   try {
     let keysData: string
-    
+
     if (importMethod.value === 'file' && previewKeys.value.length > 0) {
       keysData = JSON.stringify(previewKeys.value)
     } else if (importMethod.value === 'text') {
@@ -547,7 +505,7 @@ const handleImport = async () => {
     } else {
       throw new Error(t('importExport.messages.noImportData'))
     }
-    
+
     const importedKeys = await keyStore.importKeys(keysData)
     emit('success', `${t('importExport.messages.importSuccess')} ${importedKeys.length} ${t('importExport.export.preview.keys')}`)
     emit('close')
@@ -561,13 +519,13 @@ const handleImport = async () => {
 // 处理导出
 const handleExport = async () => {
   if (!canExport.value) return
-  
+
   isLoading.value = true
-  
+
   try {
     // 准备导出的密钥ID列表
     const keyIds = exportScope.value === 'all' ? [] : props.selectedKeys.map(key => key.id)
-    
+
     // 根据导出格式确定文件扩展名和默认文件名
     const getFileExtension = (format: string) => {
       switch (format) {
@@ -577,10 +535,10 @@ const handleExport = async () => {
         default: return 'txt'
       }
     }
-    
+
     const extension = getFileExtension(exportFormat.value)
     const defaultFileName = `ssh_keys_${new Date().toISOString().split('T')[0]}.${extension}`
-    
+
     // 使用 Tauri 文件保存对话框
     const filePath = await save({
       defaultPath: defaultFileName,
@@ -589,18 +547,18 @@ const handleExport = async () => {
         extensions: [extension]
       }]
     })
-    
+
     // 用户取消了保存
     if (!filePath) {
       isLoading.value = false
       return
     }
-    
+
     // 对于所有格式，使用后端API处理
     if (exportFormat.value === 'json') {
       // JSON格式：在前端生成数据，然后写入文件
       let exportData: string
-      
+
       if (exportScope.value === 'all') {
         exportData = await keyStore.exportAllKeys()
       } else {
@@ -614,7 +572,7 @@ const handleExport = async () => {
         }
         exportData = JSON.stringify(data, null, 2)
       }
-      
+
       // 使用写文件命令保存到用户选择的位置
       await invoke<boolean>('write_file_content', {
         filePath,
@@ -629,7 +587,7 @@ const handleExport = async () => {
         includePrivateKeys: includePrivateKeys.value
       })
     }
-    
+
     emit('success', `${t('importExport.messages.exportSuccess')} ${filePath}`)
     emit('close')
   } catch (error) {
@@ -650,7 +608,7 @@ watch(() => props.show, (newShow, oldShow) => {
         fileInput.value.value = ''
       }
     } else {
-      exportScope.value = 'all'
+      exportScope.value = props.selectedKeys.length > 0 ? 'selected' : 'all'
       exportFormat.value = 'json'
       includePrivateKeys.value = false
     }
