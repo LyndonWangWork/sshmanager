@@ -129,14 +129,21 @@
                       class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       :class="(selectedHost.identity_file && selectedHost.identity_file.length > 0) ? 'text-gray-900' : 'text-gray-400'">
                       <option value="">{{ $t('configEditor.hostConfig.selectKey') }}</option>
-                      <optgroup :label="$t('configEditor.hostConfig.identityGroups.softwareKeys')">
-                        <option v-for="key in keyStore.keys" :key="`soft-${key.id}`" :value="`~/.ssh/${key.name}`">
-                          {{ key.name }} ({{ key.key_type.toUpperCase() }})
-                        </option>
-                      </optgroup>
                       <optgroup :label="$t('configEditor.hostConfig.identityGroups.sshDirKeys')">
                         <option v-for="f in sshDirKeys" :key="`fs-${f}`" :value="`~/.ssh/${f}`">
                           {{ f }}
+                        </option>
+                      </optgroup>
+                      <optgroup v-if="externalIdentityFiles.length > 0"
+                        :label="$t('configEditor.hostConfig.identityGroups.externalKeys')">
+                        <option v-for="p in externalIdentityFiles" :key="`ext-${p}`" :value="p">
+                          {{ p }}
+                        </option>
+                      </optgroup>
+                      <optgroup :label="$t('configEditor.hostConfig.identityGroups.softwareKeys')">
+                        <option v-for="key in softwareKeysFiltered" :key="`soft-${key.id}`"
+                          :value="`~/.ssh/${key.name}`">
+                          {{ key.name }} ({{ key.key_type.toUpperCase() }})
                         </option>
                       </optgroup>
                     </select>
@@ -285,6 +292,33 @@ const refreshSshDirKeys = async () => {
     sshDirLoading.value = false
   }
 }
+
+// 显示全部软件内密钥（不做去重）
+const softwareKeysFiltered = computed(() => keyStore.keys)
+
+// 判断是否为绝对路径（跨平台简化判断）
+const isAbsolutePath = (p: string) => {
+  const s = (p || '').trim()
+  if (!s) return false
+  // POSIX 绝对路径
+  if (s.startsWith('/')) return true
+  // Windows 盘符路径，如 C:\ 或 D:/
+  if (/^[a-zA-Z]:[\\/]/.test(s)) return true
+  // Windows UNC 路径 \\\\server\share
+  if (s.startsWith('\\\\')) return true
+  return false
+}
+
+// 配置中出现的“配置目录外密钥”（绝对路径）去重列表
+const externalIdentityFiles = computed(() => {
+  const set = new Set<string>()
+  for (const host of sshConfig.hosts) {
+    const p = (host.identity_file || '').trim()
+    if (!p) continue
+    if (isAbsolutePath(p)) set.add(p)
+  }
+  return Array.from(set)
+})
 
 // 选中的主机配置
 const selectedHost = computed(() => {

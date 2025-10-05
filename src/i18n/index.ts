@@ -193,7 +193,8 @@ const zh = {
       browse: '浏览',
       identityGroups: {
         softwareKeys: '软件内密钥',
-        sshDirKeys: '配置目录密钥'
+        sshDirKeys: '配置目录密钥',
+        externalKeys: '配置目录外密钥'
       },
       addOption: '添加选项',
       newHost: '新主机',
@@ -566,7 +567,8 @@ const en = {
       browse: 'Browse',
       identityGroups: {
         softwareKeys: 'Managed Keys',
-        sshDirKeys: 'Keys in SSH directory'
+        sshDirKeys: 'Keys in SSH directory',
+        externalKeys: 'External Keys (absolute path)'
       },
       addOption: 'Add Option',
       newHost: 'New Host',
