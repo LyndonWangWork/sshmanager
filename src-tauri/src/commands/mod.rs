@@ -375,43 +375,8 @@ pub async fn reset_all_data(
     // 清除存储服务中的所有数据
     storage.reset_storage().map_err(|e| e.to_string())?;
 
-    // 生成新的盐值
-    let salt = CryptoService::generate_salt();
-
-    // 创建默认配置
-    let default_config = serde_json::json!({
-        "theme": "light",
-        "auto_backup": true,
-        "backup_retention": 10,
-        "default_key_type": "Ed25519",
-        "default_key_size": 256
-    });
-
-    // 创建初始数据
-    let initial_data = serde_json::json!({
-        "keys": [],
-        "config": default_config
-    });
-
-    // 不使用加密服务加密，而是直接创建未加密的初始数据结构
-    let storage_data = crate::types::EncryptedStorage {
-        version: "1.0".to_string(),
-        salt: salt.to_vec(),
-        master_key_hash: "".to_string(),
-        iv: vec![],                                                   // 空的初始化向量
-        encrypted_data: initial_data.to_string().as_bytes().to_vec(), // 直接存储数据
-        checksum: "".to_string(),                                     // 空校验和
-        data: serde_json::Map::new(),                                 // 空的data字段
-    };
-
-    // 直接保存到存储，不使用加密服务
-    let serialized = serde_json::to_string(&storage_data).map_err(|e| e.to_string())?;
-    std::fs::write(&storage.storage_path(), serialized).map_err(|e| e.to_string())?;
-
-    // 设置默认认证状态
-    crypto.set_master_key_hash("".to_string());
-    crypto.set_salt(salt);
-
+    // 重置后保持未初始化状态：不写入新主密钥与任何数据
+    // 此时存储文件为空，前端将进入初始化流程
     Ok(true)
 }
 
