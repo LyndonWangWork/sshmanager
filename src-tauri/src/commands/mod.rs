@@ -507,6 +507,14 @@ pub async fn write_file_content(file_path: String, content: String) -> Result<bo
         .map_err(|e| format!("文件写入失败: {}", e))
 }
 
+// 确保目录存在
+#[tauri::command]
+pub async fn ensure_dir_exists(dir_path: String) -> Result<bool, String> {
+    std::fs::create_dir_all(&dir_path)
+        .map(|_| true)
+        .map_err(|e| format!("创建目录失败: {}", e))
+}
+
 // 保存系统 SSH 配置（带备份与保留）
 #[tauri::command]
 pub async fn save_ssh_config(

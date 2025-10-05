@@ -327,6 +327,12 @@ const zh = {
     title: '设置',
     appSettings: '应用设置',
     developing: '功能开发中',
+    autoExport: {
+      title: '密钥自动导出',
+      desc: '当密钥新增、删除或导入时，自动导出所有密钥到目录',
+      dir: '导出目录',
+      tip: '未设置时默认保存到应用数据目录（可在此修改）'
+    },
     language: {
       title: '语言设置',
       select: '选择语言'
@@ -701,6 +707,12 @@ const en = {
     title: 'Settings',
     appSettings: 'Application Settings',
     developing: 'Feature under development',
+    autoExport: {
+      title: 'Auto-export keys',
+      desc: 'Automatically export all keys when keys are added, deleted, or imported',
+      dir: 'Export directory',
+      tip: 'Defaults to app data directory if not set (you can change it here)'
+    },
     language: {
       title: 'Language Settings',
       select: 'Select Language'

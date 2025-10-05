@@ -35,7 +35,33 @@
     <!-- 其他设置内容 -->
     <div class="bg-white rounded-lg shadow-sm p-6">
       <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ $t('settings.appSettings') }}</h2>
-      <p class="text-gray-600">{{ $t('settings.developing') }}</p>
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="font-medium text-gray-900">{{ $t('settings.autoExport.title') }}</div>
+            <div class="text-sm text-gray-500">{{ $t('settings.autoExport.desc') }}</div>
+          </div>
+          <label class="inline-flex items-center cursor-pointer">
+            <input type="checkbox" class="sr-only peer" :checked="settingsStore.isAutoExportEnabled"
+              @change="toggleAutoExport">
+            <div
+              class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 relative">
+            </div>
+          </label>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('settings.autoExport.dir') }}</label>
+          <div class="flex items-center space-x-2">
+            <input type="text" class="flex-1 px-3 py-2 border rounded-lg text-sm" :value="displayExportDir" readonly>
+            <button class="px-3 py-2 bg-gray-100 rounded-lg border hover:bg-gray-200" @click="chooseDir">{{
+              $t('common.select') }}</button>
+            <button class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700" @click="saveDir">{{
+              $t('common.save') }}</button>
+          </div>
+          <p class="text-xs text-gray-500 mt-1">{{ $t('settings.autoExport.tip') }}</p>
+        </div>
+      </div>
     </div>
 
     <!-- 重置功能 -->
@@ -65,15 +91,45 @@ import { ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { relaunch } from '@tauri-apps/plugin-process'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import { useSettingsStore } from '@/stores/settings'
+import { appDataDir } from '@tauri-apps/api/path'
+import { open } from '@tauri-apps/plugin-dialog'
 
 const languageStore = useLanguageStore()
 const authStore = useAuthStore()
 const keyStore = useKeyStore()
+const settingsStore = useSettingsStore()
 
 const { locale: i18nLocale, t: $t } = useI18n()
 
 // 显示确认对话框
 const showResetConfirm = ref(false)
+
+// 导出目录输入框展示值
+const displayExportDir = ref<string>('')
+
+const refreshDisplayDir = async () => {
+  const dir = settingsStore.exportDirectory || await appDataDir()
+  displayExportDir.value = dir
+}
+
+const toggleAutoExport = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  settingsStore.setAutoExportEnabled(target.checked)
+}
+
+const chooseDir = async () => {
+  const selected = await open({ directory: true, multiple: false }) as string | null
+  if (selected) {
+    displayExportDir.value = selected
+  }
+}
+
+const saveDir = async () => {
+  // Persist and ensure exists
+  settingsStore.setAutoExportDir(displayExportDir.value)
+  await settingsStore.getEffectiveExportDir()
+}
 
 // 切换语言
 const handleLanguageChange = (locale: string) => {
@@ -138,4 +194,7 @@ const confirmReset = async () => {
   // 显示确认对话框，让用户输入密码
   showResetConfirm.value = true
 }
+
+// 初始化展示目录
+refreshDisplayDir()
 </script>

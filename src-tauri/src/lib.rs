@@ -33,6 +33,7 @@ pub fn run() {
             export_key,
             export_keys_to_file,
             write_file_content,
+            ensure_dir_exists,
             save_ssh_config,
             read_ssh_config,
             list_identity_files,
