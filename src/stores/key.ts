@@ -4,6 +4,7 @@ import { invoke } from '@tauri-apps/api/core'
 import type { SshKeyPair, KeyGenerationParams } from '@/types'
 import { useSettingsStore } from '@/stores/settings'
 import { join } from '@tauri-apps/api/path'
+import { useToast } from '@/composables/useToast'
 
 export const useKeyStore = defineStore('key', () => {
   const keys = ref<SshKeyPair[]>([])
@@ -83,8 +84,55 @@ export const useKeyStore = defineStore('key', () => {
   // 导入密钥
   const importKeys = async (keysData: string): Promise<SshKeyPair[]> => {
     try {
-      const importedKeys = await invoke<SshKeyPair[]>('import_keys', { keysData })
-      // 更新本地密钥列表
+      const { info } = useToast()
+
+      // 解析传入的数据，兼容 { keys: [...] } 或直接数组
+      let parsed: unknown
+      try {
+        parsed = JSON.parse(keysData)
+      } catch {
+        throw new Error('无效的导入数据')
+      }
+
+      const rawList: SshKeyPair[] = Array.isArray(parsed)
+        ? parsed as SshKeyPair[]
+        : (parsed && typeof parsed === 'object' && Array.isArray((parsed as any).keys))
+          ? (parsed as any).keys as SshKeyPair[]
+          : []
+
+      if (rawList.length === 0) {
+        return []
+      }
+
+      // 过滤：跳过与现有 ID 冲突的密钥，同时去除导入集合内部的重复 ID
+      const existingIds = new Set(keys.value.map(k => k.id))
+      const seenImportIds = new Set<string>()
+      const toImport: SshKeyPair[] = []
+      let skippedCount = 0
+
+      for (const item of rawList) {
+        if (!item || typeof item !== 'object' || !('id' in item)) {
+          continue
+        }
+        const id = (item as SshKeyPair).id
+        if (existingIds.has(id) || seenImportIds.has(id)) {
+          skippedCount += 1
+          continue
+        }
+        seenImportIds.add(id)
+        toImport.push(item as SshKeyPair)
+      }
+
+      if (skippedCount > 0) {
+        info(`已跳过 ${skippedCount} 个重复密钥（ID 已存在或重复）`)
+      }
+
+      if (toImport.length === 0) {
+        return []
+      }
+
+      const payload = JSON.stringify(toImport)
+      const importedKeys = await invoke<SshKeyPair[]>('import_keys', { keysData: payload })
       keys.value = [...keys.value, ...importedKeys]
       await maybeAutoExport()
       return importedKeys

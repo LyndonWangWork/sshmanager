@@ -215,17 +215,36 @@ pub async fn import_keys(
     // 加载现有数据
     let mut data = load_and_decrypt_data(&crypto_state, &storage_state).await?;
 
-    // 添加新密钥
+    // 添加新密钥（跳过已存在的 ID，并去重导入集合内部的重复）
     let keys_array = data["keys"].as_array_mut().ok_or("无效的数据格式")?;
 
-    for key in &imported_keys {
+    let mut existing_ids = std::collections::HashSet::new();
+    for k in keys_array.iter() {
+        if let Some(id) = k["id"].as_str() {
+            existing_ids.insert(id.to_string());
+        }
+    }
+
+    let mut seen_import_ids = std::collections::HashSet::new();
+    let mut to_add: Vec<SshKeyPair> = Vec::new();
+    for key in imported_keys.into_iter() {
+        if existing_ids.contains(&key.id) {
+            continue;
+        }
+        if !seen_import_ids.insert(key.id.clone()) {
+            continue;
+        }
+        to_add.push(key);
+    }
+
+    for key in &to_add {
         keys_array.push(serde_json::to_value(key).map_err(|e| e.to_string())?);
     }
 
     // 保存数据
     save_encrypted_data(data, &crypto_state, &storage_state).await?;
 
-    Ok(imported_keys)
+    Ok(to_add)
 }
 
 // 导出密钥到指定文件（增强版本）

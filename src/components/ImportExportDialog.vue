@@ -19,7 +19,7 @@
           <!-- 导入方式选择 -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.import.method.title')
-            }}</label>
+              }}</label>
             <div class="space-y-2">
               <label class="flex items-center">
                 <input v-model="importMethod" type="radio" value="file" class="mr-3" />
@@ -35,7 +35,7 @@
           <!-- 文件选择 -->
           <div v-if="importMethod === 'file'">
             <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.import.file.label')
-            }}</label>
+              }}</label>
             <input ref="fileInput" type="file" accept=".json,.key,.pub,.pem,application/json,text/plain"
               @change="handleFileSelect"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -44,7 +44,7 @@
           <!-- 文本输入 -->
           <div v-if="importMethod === 'text'">
             <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.import.text.label')
-            }}</label>
+              }}</label>
             <textarea v-model="importText" rows="8" :placeholder="$t('importExport.import.text.placeholder')"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"></textarea>
           </div>
@@ -66,7 +66,7 @@
           <!-- 导出选项 -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.export.scope.title')
-            }}</label>
+              }}</label>
             <div class="space-y-2">
               <label class="flex items-center">
                 <input v-model="exportScope" type="radio" value="all" class="mr-3" />
@@ -83,7 +83,7 @@
           <!-- 导出格式 -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.export.format.title')
-            }}</label>
+              }}</label>
             <select v-model="exportFormat"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="json">{{ $t('importExport.export.format.json') }}</option>
@@ -259,16 +259,34 @@ const handleFileSelect = (event: Event) => {
 
       let keysArray: any[] = []
 
-      // 根据文件扩展名和内容判断文件类型
-      if (fileName.endsWith('.pub')) {
-        // SSH公钥文件
-        keysArray = parsePublicKeyFile(content, fileName)
-      } else if (fileName.endsWith('.key') || fileName.includes('id_') || content.includes('BEGIN') && content.includes('PRIVATE KEY')) {
-        // SSH私钥文件
-        keysArray = parsePrivateKeyFile(content, fileName)
-      } else {
-        // JSON格式文件
-        keysArray = parseJsonFile(content)
+      // 优先作为 JSON 解析（避免 JSON 文本中包含 "BEGIN ... PRIVATE KEY" 被误判）
+      const looksLikeJson = fileName.endsWith('.json') || /^[\s\n\r]*[\[{]/.test(content)
+      if (looksLikeJson) {
+        try {
+          keysArray = parseJsonFile(content)
+        } catch {
+          // JSON 解析失败则继续按密钥文件启发式处理
+          keysArray = []
+        }
+      }
+
+      // 如果不是 JSON 或 JSON 解析失败，再根据扩展名/内容启发式判断
+      if (keysArray.length === 0) {
+        if (fileName.endsWith('.pub')) {
+          // SSH公钥文件
+          keysArray = parsePublicKeyFile(content, fileName)
+        } else if (
+          fileName.endsWith('.key') ||
+          fileName.endsWith('.pem') ||
+          fileName.includes('id_') ||
+          (content.includes('BEGIN') && content.includes('PRIVATE KEY'))
+        ) {
+          // SSH私钥文件
+          keysArray = parsePrivateKeyFile(content, fileName)
+        } else {
+          // 最后再尝试 JSON（例如无扩展名但为 JSON 的情况）
+          keysArray = parseJsonFile(content)
+        }
       }
 
       // 验证密钥对象的必要字段
