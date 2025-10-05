@@ -527,7 +527,7 @@ const exportSoftwareKeys = async () => {
   for (const host of sshConfig.hosts) {
     if (host.identity_file && host.identity_file.startsWith('~/.ssh/')) {
       const fileName = host.identity_file.replace('~/.ssh/', '')
-      // 检查是否是软件内密钥（通过 keyStore.keys 查找）
+      // 检查是否是软件内密钥（通过文件名与密钥 name 匹配，若匹配则使用其全局唯一 id）
       const key = keyStore.keys.find(k => k.name === fileName)
       if (key) {
         usedKeys.add(key.id)

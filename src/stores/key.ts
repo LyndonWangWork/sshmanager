@@ -109,6 +109,16 @@ export const useKeyStore = defineStore('key', () => {
     selectedKeyId.value = id
   }
 
+  // 根据ID获取密钥
+  const getKeyById = (id: string): SshKeyPair | undefined => {
+    return keys.value.find(k => k.id === id)
+  }
+
+  // 判断是否存在指定ID的密钥
+  const hasKey = (id: string): boolean => {
+    return keys.value.some(k => k.id === id)
+  }
+
   // 清除所有密钥
   const clearKeys = () => {
     keys.value = []
@@ -142,6 +152,8 @@ export const useKeyStore = defineStore('key', () => {
     importKeys,
     exportAllKeys,
     setSelectedKey,
+    getKeyById,
+    hasKey,
     clearKeys,
   }
 })
