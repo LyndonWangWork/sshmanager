@@ -166,6 +166,13 @@ const handleLanguageChange = (locale: string) => {
 // 重置所有数据
 const resetAllData = async (masterKey: string) => {
   try {
+    // 重置前：备份导出目录中的导出文件
+    try {
+      const dir = await settingsStore.getEffectiveExportDir()
+      await invoke('backup_export_files', { dirPath: dir })
+    } catch (e) {
+      console.error('备份导出文件失败（忽略，不阻断重置）', e)
+    }
     // 调用Tauri命令验证密码并重置数据
     const result = await invoke('reset_all_data', { masterKey })
 

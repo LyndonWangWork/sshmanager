@@ -32,6 +32,7 @@ pub fn run() {
             delete_key,
             export_key,
             export_keys_to_file,
+            backup_export_files,
             write_file_content,
             ensure_dir_exists,
             save_ssh_config,

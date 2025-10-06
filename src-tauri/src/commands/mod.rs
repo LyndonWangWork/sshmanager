@@ -627,3 +627,61 @@ pub async fn open_directory(dir_path: String) -> Result<bool, String> {
         return Ok(true);
     }
 }
+
+// 备份导出目录中的导出文件：在重置应用前调用
+#[tauri::command]
+pub async fn backup_export_files(dir_path: String) -> Result<bool, String> {
+    use std::fs;
+    use std::path::{Path, PathBuf};
+
+    if dir_path.trim().is_empty() {
+        return Err("目录路径为空".to_string());
+    }
+
+    let base = Path::new(&dir_path);
+    if !base.exists() {
+        // 导出目录不存在则视为无文件可备份，直接返回成功
+        return Ok(true);
+    }
+
+    let backup_dir: PathBuf = base.join("backup");
+    fs::create_dir_all(&backup_dir).map_err(|e| format!("创建备份目录失败: {}", e))?;
+
+    let timestamp = chrono::Local::now().format("%Y%m%d_%H%M%S").to_string();
+
+    for entry in fs::read_dir(base).map_err(|e| format!("读取目录失败: {}", e))? {
+        let entry = entry.map_err(|e| format!("读取目录项失败: {}", e))?;
+        let path = entry.path();
+
+        // 跳过目录与备份目录本身
+        if path.is_dir() {
+            continue;
+        }
+
+        // 仅处理文件
+        if path.is_file() {
+            if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
+                // 生成带时间戳的新文件名
+                let (stem, ext) = match (
+                    path.file_stem().and_then(|s| s.to_str()),
+                    path.extension().and_then(|e| e.to_str()),
+                ) {
+                    (Some(stem), Some(ext)) => (stem.to_string(), Some(ext.to_string())),
+                    (Some(stem), None) => (stem.to_string(), None),
+                    _ => (file_name.to_string(), None),
+                };
+
+                let new_name = match ext {
+                    Some(ext) => format!("{}_{}.{}", stem, timestamp, ext),
+                    None => format!("{}_{}", stem, timestamp),
+                };
+
+                let target = backup_dir.join(new_name);
+                fs::copy(&path, &target)
+                    .map_err(|e| format!("备份文件失败 ({}): {}", file_name, e))?;
+            }
+        }
+    }
+
+    Ok(true)
+}
