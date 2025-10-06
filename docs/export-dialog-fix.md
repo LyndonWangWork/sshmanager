@@ -88,6 +88,11 @@ pub async fn write_file_content(
 }
 ```
 
+#### 同步：导入后列表刷新
+
+- 在 `src/views/KeyManager.vue` 的 `handleImportSuccess` 中添加 `await keyStore.loadKeys()`，确保导入成功后立即刷新密钥列表。
+- 在 `src/components/ImportExportDialog.vue` 的加密导入回调 `onPasswordConfirm` 的成功分支中调用 `await keyStore.loadKeys()`，确保加密导入同样即时刷新。
+
 ## 功能验证
 
 ### 用户体验改进
@@ -116,11 +121,12 @@ pub async fn write_file_content(
 
 1. 启动应用：`pnpm tauri dev`
 2. 进入密钥管理页面
-3. 点击"导出密钥"按钮
+3. 点击"导出密钥"按钮 / 执行一次导入并观察密钥列表立即刷新
 4. 选择导出格式（JSON/OpenSSH/PEM）
 5. 点击"导出密钥"
 6. 验证：
    - ✅ 出现原生文件保存对话框
+   - ✅ 导入成功后列表立即刷新（包含加密与非加密导入）
    - ✅ 可以选择保存位置
    - ✅ 可以修改文件名
    - ✅ 文件成功保存到指定位置

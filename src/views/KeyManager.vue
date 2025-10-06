@@ -307,9 +307,15 @@ const importKeys = () => {
 }
 
 // 处理导入成功
-const handleImportSuccess = (message: string) => {
+const handleImportSuccess = async (message: string) => {
   console.log('导入成功:', message)
   toastSuccess(message)
+  // 导入成功后立即刷新列表，确保加密/非加密导入都能实时显示
+  try {
+    await keyStore.loadKeys()
+  } catch (e) {
+    console.error('导入后刷新密钥列表失败:', e)
+  }
 }
 
 // 处理导入错误
