@@ -19,7 +19,7 @@
           <!-- 导入方式选择 -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.import.method.title')
-              }}</label>
+            }}</label>
             <div class="space-y-2">
               <label class="flex items-center">
                 <input v-model="importMethod" type="radio" value="file" class="mr-3" />
@@ -35,7 +35,7 @@
           <!-- 文件选择 -->
           <div v-if="importMethod === 'file'">
             <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.import.file.label')
-              }}</label>
+            }}</label>
             <input ref="fileInput" type="file" accept=".json,.key,.pub,.pem,application/json,text/plain"
               @change="handleFileSelect"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -44,7 +44,7 @@
           <!-- 文本输入 -->
           <div v-if="importMethod === 'text'">
             <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.import.text.label')
-              }}</label>
+            }}</label>
             <textarea v-model="importText" rows="8" :placeholder="$t('importExport.import.text.placeholder')"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"></textarea>
           </div>
@@ -66,7 +66,7 @@
           <!-- 导出选项 -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.export.scope.title')
-              }}</label>
+            }}</label>
             <div class="space-y-2">
               <label class="flex items-center">
                 <input v-model="exportScope" type="radio" value="all" class="mr-3" />
@@ -80,10 +80,22 @@
             </div>
           </div>
 
+          <!-- 导出加密选项：使用主密码加密导出内容 -->
+          <div>
+            <label class="flex items-center">
+              <input v-model="encryptWithMaster" type="checkbox" class="mr-3" />
+              <span class="text-sm">使用主密码加密导出</span>
+            </label>
+            <div v-if="encryptWithMaster" class="mt-2">
+              <BaseInput v-model="exportPassword" type="password" :label="$t('auth.masterPassword')"
+                :placeholder="$t('auth.loginPlaceholder')" />
+            </div>
+          </div>
+
           <!-- 导出格式 -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.export.format.title')
-              }}</label>
+            }}</label>
             <select v-model="exportFormat"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="json">{{ $t('importExport.export.format.json') }}</option>
@@ -128,6 +140,11 @@
       </div>
     </div>
   </div>
+  <!-- 加密导入密码对话框 -->
+  <ConfirmDialog v-model:visible="showPasswordDialog" :title="$t('auth.masterPassword')"
+    :message="$t('auth.loginPlaceholder')" :confirm-button-text="$t('common.confirm')"
+    :cancel-button-text="$t('common.cancel')" :require-password="true" ref="passwordDialogRef"
+    @confirm="onPasswordConfirm" @cancel="onPasswordCancel" />
 </template>
 
 <script setup lang="ts">
@@ -138,7 +155,9 @@ import { useI18n } from 'vue-i18n'
 import { useKeyStore } from '@/stores/key'
 import type { SshKeyPair } from '@/types'
 import BaseButton from '@/components/BaseButton.vue'
+import BaseInput from '@/components/BaseInput.vue'
 import { XMarkIcon } from '@heroicons/vue/24/outline'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 
 interface Props {
   show: boolean
@@ -164,11 +183,17 @@ const importMethod = ref<'file' | 'text'>('file')
 const importText = ref('')
 const previewKeys = ref<SshKeyPair[]>([])
 const fileInput = ref<HTMLInputElement | null>(null)
+const lastImportRaw = ref('')
+const showPasswordDialog = ref(false)
+const pendingEncryptedImport = ref('')
+const passwordDialogRef = ref<InstanceType<typeof ConfirmDialog> | null>(null)
 
 // 导出相关状态
 const exportScope = ref<'all' | 'selected'>('all')
 const exportFormat = ref<'json' | 'openssh' | 'pem'>('json')
 const includePrivateKeys = ref(false)
+const encryptWithMaster = ref(false)
+const exportPassword = ref('')
 
 // 通用状态
 const isLoading = ref(false)
@@ -255,6 +280,7 @@ const handleFileSelect = (event: Event) => {
   reader.onload = (e) => {
     try {
       const content = e.target?.result as string
+      lastImportRaw.value = content || ''
       const fileName = file.name.toLowerCase()
 
       let keysArray: any[] = []
@@ -513,18 +539,40 @@ const handleImport = async () => {
   isLoading.value = true
 
   try {
-    let keysData: string
-
-    if (importMethod.value === 'file' && previewKeys.value.length > 0) {
-      keysData = JSON.stringify(previewKeys.value)
-    } else if (importMethod.value === 'text') {
-      const parsed = JSON.parse(importText.value)
-      keysData = JSON.stringify(parsed.keys || parsed)
-    } else {
-      throw new Error(t('importExport.messages.noImportData'))
+    // 检测是否为加密导出格式
+    const getRawContent = (): string => {
+      if (importMethod.value === 'text') return importText.value
+      return lastImportRaw.value
     }
 
-    const importedKeys = await keyStore.importKeys(keysData)
+    const looksEncrypted = (() => {
+      try {
+        const raw = getRawContent()
+        if (!raw.trim()) return false
+        const v = JSON.parse(raw)
+        return v && typeof v === 'object' && v.version === '1.1-encrypted' && Array.isArray(v.keys) && v.salt
+      } catch { return false }
+    })()
+
+    let importedKeys
+    if (looksEncrypted) {
+      // 弹出密码输入对话框
+      pendingEncryptedImport.value = getRawContent()
+      showPasswordDialog.value = true
+      isLoading.value = false
+      return
+    } else {
+      let keysData: string
+      if (importMethod.value === 'file' && previewKeys.value.length > 0) {
+        keysData = JSON.stringify(previewKeys.value)
+      } else if (importMethod.value === 'text') {
+        const parsed = JSON.parse(importText.value)
+        keysData = JSON.stringify(parsed.keys || parsed)
+      } else {
+        throw new Error(t('importExport.messages.noImportData'))
+      }
+      importedKeys = await keyStore.importKeys(keysData)
+    }
     emit('success', `${t('importExport.messages.importSuccess')} ${importedKeys.length} ${t('importExport.export.preview.keys')}`)
     emit('close')
   } catch (error) {
@@ -577,18 +625,47 @@ const handleExport = async () => {
       // JSON格式：在前端生成数据，然后写入文件
       let exportData: string
 
-      if (exportScope.value === 'all') {
-        exportData = await keyStore.exportAllKeys()
-      } else {
-        const data = {
-          version: '1.0',
-          exported_at: new Date().toISOString(),
-          keys: props.selectedKeys.map(key => ({
-            ...key,
-            private_key: includePrivateKeys.value ? key.private_key : '[REDACTED]'
-          }))
+      if (encryptWithMaster.value) {
+        // 加密导出：先验证主密码是否正确
+        if (!exportPassword.value || exportPassword.value.length < 1) {
+          throw new Error(t('auth.errors.passwordLength'))
         }
-        exportData = JSON.stringify(data, null, 2)
+        const valid = await invoke<boolean>('verify_master_password', {
+          masterKey: exportPassword.value
+        })
+        if (!valid) {
+          emit('error', t('auth.errors.wrongPassword'))
+          isLoading.value = false
+          return
+        }
+        // 在后端使用主密码加密公钥/私钥
+        if (exportScope.value === 'all') {
+          exportData = await invoke<string>('export_all_keys_encrypted', {
+            masterKey: exportPassword.value,
+            includePrivateKeys: includePrivateKeys.value
+          })
+        } else {
+          const ids = props.selectedKeys.map(k => k.id)
+          exportData = await invoke<string>('export_selected_keys_encrypted', {
+            keyIds: ids,
+            masterKey: exportPassword.value,
+            includePrivateKeys: includePrivateKeys.value
+          })
+        }
+      } else {
+        if (exportScope.value === 'all') {
+          exportData = await keyStore.exportAllKeys()
+        } else {
+          const data = {
+            version: '1.0',
+            exported_at: new Date().toISOString(),
+            keys: props.selectedKeys.map(key => ({
+              ...key,
+              private_key: includePrivateKeys.value ? key.private_key : '[REDACTED]'
+            }))
+          }
+          exportData = JSON.stringify(data, null, 2)
+        }
       }
 
       // 使用写文件命令保存到用户选择的位置
@@ -629,8 +706,38 @@ watch(() => props.show, (newShow, oldShow) => {
       exportScope.value = props.selectedKeys.length > 0 ? 'selected' : 'all'
       exportFormat.value = 'json'
       includePrivateKeys.value = false
+      encryptWithMaster.value = false
+      exportPassword.value = ''
     }
     isLoading.value = false
   }
 })
+
+// 加密导入：确认密码
+const onPasswordConfirm = async (password?: string) => {
+  if (!password) {
+    passwordDialogRef.value?.setPasswordError?.(t('auth.errors.passwordLength') as string)
+    return
+  }
+  isLoading.value = true
+  try {
+    const importedKeys = await invoke<SshKeyPair[]>('import_encrypted_keys', {
+      keysData: pendingEncryptedImport.value,
+      masterKey: password
+    })
+    emit('success', `${t('importExport.messages.importSuccess')} ${importedKeys.length} ${t('importExport.export.preview.keys')}`)
+    emit('close')
+    showPasswordDialog.value = false
+    pendingEncryptedImport.value = ''
+  } catch (e) {
+    passwordDialogRef.value?.setPasswordError?.(t('auth.errors.wrongPassword') as string)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// 加密导入：取消密码输入
+const onPasswordCancel = () => {
+  showPasswordDialog.value = false
+}
 </script>

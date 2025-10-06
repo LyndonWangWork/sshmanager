@@ -424,6 +424,377 @@ pub async fn export_all_keys(
     serde_json::to_string_pretty(&export_data).map_err(|e| format!("序列化失败: {}", e))
 }
 
+// 验证主密码是否正确
+#[tauri::command]
+pub async fn verify_master_password(
+    master_key: String,
+    crypto_state: CryptoState<'_>,
+    storage_state: StorageState<'_>,
+) -> Result<bool, String> {
+    let mut crypto = crypto_state.lock().map_err(|e| e.to_string())?;
+    let storage = storage_state.lock().map_err(|e| e.to_string())?;
+
+    // 加载存储文件中的盐与哈希
+    let (_encrypted_data, _salt_vec, stored_hash, salt) =
+        storage.load_encrypted_data().map_err(|e| e.to_string())?;
+
+    crypto.set_salt(salt);
+    crypto.set_master_key_hash(stored_hash.clone());
+
+    Ok(crypto.verify_password(&master_key))
+}
+
+// 导出所有密钥（加密JSON，使用用户提供的主密码）
+#[tauri::command]
+pub async fn export_all_keys_encrypted(
+    master_key: String,
+    include_private_keys: bool,
+    crypto_state: CryptoState<'_>,
+    storage_state: StorageState<'_>,
+) -> Result<String, String> {
+    let data = load_and_decrypt_data(&crypto_state, &storage_state).await?;
+
+    let keys: Vec<SshKeyPair> = data["keys"]
+        .as_array()
+        .ok_or("无效的数据格式")?
+        .iter()
+        .map(|v| serde_json::from_value(v.clone()))
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| e.to_string())?;
+
+    let export_salt = crate::services::CryptoService::generate_salt();
+
+    // 为每个密钥加密公钥与私钥
+    let mut enc_keys: Vec<serde_json::Value> = Vec::new();
+    for k in keys {
+        let pub_enc = crate::services::CryptoService::encrypt_with_password(
+            &master_key,
+            &export_salt,
+            k.public_key.as_bytes(),
+        )
+        .map_err(|e| e.to_string())?;
+
+        let priv_enc_value = if include_private_keys {
+            let priv_enc = crate::services::CryptoService::encrypt_with_password(
+                &master_key,
+                &export_salt,
+                k.private_key.as_bytes(),
+            )
+            .map_err(|e| e.to_string())?;
+            serde_json::json!({
+                "nonce": priv_enc.nonce,
+                "ciphertext": priv_enc.ciphertext,
+            })
+        } else {
+            serde_json::Value::Null
+        };
+
+        let item = serde_json::json!({
+            "id": k.id,
+            "name": k.name,
+            "key_type": k.key_type,
+            "key_size": k.key_size,
+            "comment": k.comment,
+            "fingerprint": k.fingerprint,
+            "created_at": k.created_at,
+            "public_key_encrypted": { "nonce": pub_enc.nonce, "ciphertext": pub_enc.ciphertext },
+            "private_key_encrypted": priv_enc_value,
+        });
+        enc_keys.push(item);
+    }
+
+    let export_obj = serde_json::json!({
+        "version": "1.1-encrypted",
+        "exported_at": chrono::Utc::now(),
+        "kdf": {
+            "type": "pbkdf2-hmac-sha256",
+            "iterations": 100_000,
+        },
+        "salt": export_salt,
+        "keys": enc_keys,
+    });
+
+    serde_json::to_string_pretty(&export_obj).map_err(|e| format!("序列化失败: {}", e))
+}
+
+// 导出选中的密钥（加密JSON，使用用户提供的主密码）
+#[tauri::command]
+pub async fn export_selected_keys_encrypted(
+    key_ids: Vec<String>,
+    master_key: String,
+    include_private_keys: bool,
+    crypto_state: CryptoState<'_>,
+    storage_state: StorageState<'_>,
+) -> Result<String, String> {
+    let data = load_and_decrypt_data(&crypto_state, &storage_state).await?;
+
+    let all_keys: Vec<SshKeyPair> = data["keys"]
+        .as_array()
+        .ok_or("无效的数据格式")?
+        .iter()
+        .map(|v| serde_json::from_value(v.clone()))
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| e.to_string())?;
+
+    let keys: Vec<SshKeyPair> = if key_ids.is_empty() {
+        all_keys
+    } else {
+        all_keys
+            .into_iter()
+            .filter(|k| key_ids.contains(&k.id))
+            .collect()
+    };
+
+    if keys.is_empty() {
+        return Err("没有找到要导出的密钥".to_string());
+    }
+
+    let export_salt = crate::services::CryptoService::generate_salt();
+    let mut enc_keys: Vec<serde_json::Value> = Vec::new();
+    for k in keys {
+        let pub_enc = crate::services::CryptoService::encrypt_with_password(
+            &master_key,
+            &export_salt,
+            k.public_key.as_bytes(),
+        )
+        .map_err(|e| e.to_string())?;
+
+        let priv_enc_value = if include_private_keys {
+            let priv_enc = crate::services::CryptoService::encrypt_with_password(
+                &master_key,
+                &export_salt,
+                k.private_key.as_bytes(),
+            )
+            .map_err(|e| e.to_string())?;
+            serde_json::json!({
+                "nonce": priv_enc.nonce,
+                "ciphertext": priv_enc.ciphertext,
+            })
+        } else {
+            serde_json::Value::Null
+        };
+
+        let item = serde_json::json!({
+            "id": k.id,
+            "name": k.name,
+            "key_type": k.key_type,
+            "key_size": k.key_size,
+            "comment": k.comment,
+            "fingerprint": k.fingerprint,
+            "created_at": k.created_at,
+            "public_key_encrypted": { "nonce": pub_enc.nonce, "ciphertext": pub_enc.ciphertext },
+            "private_key_encrypted": priv_enc_value,
+        });
+        enc_keys.push(item);
+    }
+
+    let export_obj = serde_json::json!({
+        "version": "1.1-encrypted",
+        "exported_at": chrono::Utc::now(),
+        "kdf": {
+            "type": "pbkdf2-hmac-sha256",
+            "iterations": 100_000,
+        },
+        "salt": export_salt,
+        "keys": enc_keys,
+    });
+
+    serde_json::to_string_pretty(&export_obj).map_err(|e| format!("序列化失败: {}", e))
+}
+
+// 导入加密的密钥（使用用户主密码解密公钥/私钥）
+#[tauri::command]
+pub async fn import_encrypted_keys(
+    keys_data: String,
+    master_key: String,
+    crypto_state: CryptoState<'_>,
+    storage_state: StorageState<'_>,
+) -> Result<Vec<SshKeyPair>, String> {
+    let v: serde_json::Value =
+        serde_json::from_str(&keys_data).map_err(|e| format!("解析密钥数据失败: {}", e))?;
+
+    let salt_vec = v
+        .get("salt")
+        .and_then(|s| s.as_array())
+        .ok_or("缺少salt或格式无效")?;
+    if salt_vec.len() != 32 {
+        return Err("salt长度无效".to_string());
+    }
+    let mut salt = [0u8; 32];
+    for (i, b) in salt_vec.iter().enumerate() {
+        salt[i] = b.as_u64().ok_or("salt字节无效")? as u8;
+    }
+
+    let items = v
+        .get("keys")
+        .and_then(|k| k.as_array())
+        .ok_or("缺少keys或格式无效")?;
+
+    let mut decrypted_keys: Vec<SshKeyPair> = Vec::new();
+    for item in items {
+        let id = item
+            .get("id")
+            .and_then(|x| x.as_str())
+            .ok_or("缺少id")?
+            .to_string();
+        let name = item
+            .get("name")
+            .and_then(|x| x.as_str())
+            .ok_or("缺少name")?
+            .to_string();
+        let key_type = {
+            let s = item
+                .get("key_type")
+                .and_then(|x| x.as_str())
+                .ok_or("缺少key_type")?;
+            match s {
+                "Rsa" | "RSA" | "rsa" => crate::types::SshKeyType::Rsa,
+                "Ed25519" | "ed25519" => crate::types::SshKeyType::Ed25519,
+                "Ecdsa" | "ECDSA" | "ecdsa" => crate::types::SshKeyType::Ecdsa,
+                other => return Err(format!("不支持的key_type: {}", other)),
+            }
+        };
+        let key_size = item
+            .get("key_size")
+            .and_then(|x| x.as_u64())
+            .ok_or("缺少key_size")? as u32;
+        let comment = item
+            .get("comment")
+            .and_then(|x| x.as_str())
+            .unwrap_or("")
+            .to_string();
+        let fingerprint = item
+            .get("fingerprint")
+            .and_then(|x| x.as_str())
+            .unwrap_or("")
+            .to_string();
+
+        let created_at = match item.get("created_at") {
+            Some(x) if x.is_string() => chrono::DateTime::parse_from_rfc3339(x.as_str().unwrap())
+                .map(|dt| dt.with_timezone(&chrono::Utc))
+                .unwrap_or_else(|_| chrono::Utc::now()),
+            Some(x) if x.is_object() => chrono::Utc::now(),
+            _ => chrono::Utc::now(),
+        };
+
+        let pub_obj = item
+            .get("public_key_encrypted")
+            .ok_or("缺少public_key_encrypted")?;
+        let pub_nonce = pub_obj
+            .get("nonce")
+            .and_then(|a| a.as_array())
+            .ok_or("public_key_encrypted.nonce无效")?;
+        let pub_cipher = pub_obj
+            .get("ciphertext")
+            .and_then(|a| a.as_array())
+            .ok_or("public_key_encrypted.ciphertext无效")?;
+
+        let mut pub_nonce_bytes: Vec<u8> = Vec::with_capacity(pub_nonce.len());
+        for b in pub_nonce {
+            pub_nonce_bytes.push(b.as_u64().ok_or("nonce字节无效")? as u8);
+        }
+        let mut pub_cipher_bytes: Vec<u8> = Vec::with_capacity(pub_cipher.len());
+        for b in pub_cipher {
+            pub_cipher_bytes.push(b.as_u64().ok_or("ciphertext字节无效")? as u8);
+        }
+
+        let pub_enc = crate::services::EncryptedData {
+            nonce: pub_nonce_bytes,
+            ciphertext: pub_cipher_bytes,
+        };
+        let public_key_bytes =
+            crate::services::CryptoService::decrypt_with_password(&master_key, &salt, &pub_enc)
+                .map_err(|_| "解密失败: 公钥".to_string())?;
+        let public_key =
+            String::from_utf8(public_key_bytes).map_err(|_| "公钥解码失败".to_string())?;
+
+        let private_key = if let Some(priv_obj) = item.get("private_key_encrypted") {
+            if priv_obj.is_null() {
+                String::new()
+            } else {
+                let priv_nonce = priv_obj
+                    .get("nonce")
+                    .and_then(|a| a.as_array())
+                    .ok_or("private_key_encrypted.nonce无效")?;
+                let priv_cipher = priv_obj
+                    .get("ciphertext")
+                    .and_then(|a| a.as_array())
+                    .ok_or("private_key_encrypted.ciphertext无效")?;
+
+                let mut priv_nonce_bytes: Vec<u8> = Vec::with_capacity(priv_nonce.len());
+                for b in priv_nonce {
+                    priv_nonce_bytes.push(b.as_u64().ok_or("nonce字节无效")? as u8);
+                }
+                let mut priv_cipher_bytes: Vec<u8> = Vec::with_capacity(priv_cipher.len());
+                for b in priv_cipher {
+                    priv_cipher_bytes.push(b.as_u64().ok_or("ciphertext字节无效")? as u8);
+                }
+
+                let priv_enc = crate::services::EncryptedData {
+                    nonce: priv_nonce_bytes,
+                    ciphertext: priv_cipher_bytes,
+                };
+                let private_key_bytes = crate::services::CryptoService::decrypt_with_password(
+                    &master_key,
+                    &salt,
+                    &priv_enc,
+                )
+                .map_err(|_| "解密失败: 私钥".to_string())?;
+                String::from_utf8(private_key_bytes).map_err(|_| "私钥解码失败".to_string())?
+            }
+        } else {
+            String::new()
+        };
+
+        decrypted_keys.push(SshKeyPair {
+            id,
+            name,
+            key_type,
+            key_size,
+            comment,
+            fingerprint,
+            public_key,
+            private_key,
+            created_at,
+            last_used: None,
+        });
+    }
+
+    // 加载现有数据
+    let mut data = load_and_decrypt_data(&crypto_state, &storage_state).await?;
+
+    // 添加新密钥（跳过已存在的 ID，并去重导入集合内部的重复）
+    let keys_array = data["keys"].as_array_mut().ok_or("无效的数据格式")?;
+
+    let mut existing_ids = std::collections::HashSet::new();
+    for k in keys_array.iter() {
+        if let Some(id) = k["id"].as_str() {
+            existing_ids.insert(id.to_string());
+        }
+    }
+
+    let mut seen_import_ids = std::collections::HashSet::new();
+    let mut to_add: Vec<SshKeyPair> = Vec::new();
+    for key in decrypted_keys.into_iter() {
+        if existing_ids.contains(&key.id) {
+            continue;
+        }
+        if !seen_import_ids.insert(key.id.clone()) {
+            continue;
+        }
+        to_add.push(key);
+    }
+
+    for key in &to_add {
+        keys_array.push(serde_json::to_value(key).map_err(|e| e.to_string())?);
+    }
+
+    // 保存数据
+    save_encrypted_data(data, &crypto_state, &storage_state).await?;
+
+    Ok(to_add)
+}
+
 // 辅助函数
 async fn load_and_decrypt_data(
     crypto_state: &CryptoState<'_>,

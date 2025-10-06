@@ -34,6 +34,46 @@ impl CryptoService {
         key
     }
 
+    // 使用提供的密码与给定盐值进行一次性加密（不依赖内部认证状态）
+    pub fn encrypt_with_password(
+        password: &str,
+        salt: &[u8],
+        data: &[u8],
+    ) -> AppResult<EncryptedData> {
+        let key_bytes = Self::derive_key(password, salt);
+        let cipher = Aes256Gcm::new((&key_bytes).into());
+
+        let mut nonce_bytes = [0u8; 12];
+        let mut rng = OsRng;
+        rng.fill_bytes(&mut nonce_bytes);
+        let nonce = Nonce::from_slice(&nonce_bytes);
+
+        let ciphertext = cipher
+            .encrypt(nonce, data)
+            .map_err(|_| AppError::Unknown("加密失败".to_string()))?;
+
+        Ok(EncryptedData {
+            nonce: nonce_bytes.to_vec(),
+            ciphertext,
+        })
+    }
+
+    // 使用提供的密码与给定盐值进行一次性解密（不依赖内部认证状态）
+    pub fn decrypt_with_password(
+        password: &str,
+        salt: &[u8],
+        encrypted: &EncryptedData,
+    ) -> AppResult<Vec<u8>> {
+        let key_bytes = Self::derive_key(password, salt);
+        let cipher = Aes256Gcm::new((&key_bytes).into());
+        let nonce = Nonce::from_slice(&encrypted.nonce);
+
+        let plaintext = cipher
+            .decrypt(nonce, encrypted.ciphertext.as_ref())
+            .map_err(|_| AppError::Unknown("解密失败".to_string()))?;
+        Ok(plaintext)
+    }
+
     // 生成密码哈希（用于向后兼容）
     pub fn hash_password(password: &str, salt: &[u8]) -> String {
         let mut hasher = sha2::Sha256::new();
