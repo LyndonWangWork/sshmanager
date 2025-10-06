@@ -594,3 +594,36 @@ pub async fn open_config_directory(_app: tauri::AppHandle) -> Result<bool, Strin
         return Ok(true);
     }
 }
+
+// 打开任意目录（跨平台）
+#[tauri::command]
+pub async fn open_directory(dir_path: String) -> Result<bool, String> {
+    if dir_path.trim().is_empty() {
+        return Err("目录路径为空".to_string());
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        Command::new("explorer")
+            .arg(dir_path)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+        return Ok(true);
+    }
+    #[cfg(target_os = "macos")]
+    {
+        Command::new("open")
+            .arg(dir_path)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+        return Ok(true);
+    }
+    #[cfg(all(unix, not(target_os = "macos")))]
+    {
+        Command::new("xdg-open")
+            .arg(dir_path)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+        return Ok(true);
+    }
+}

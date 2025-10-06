@@ -56,8 +56,12 @@
             <input type="text" class="flex-1 px-3 py-2 border rounded-lg text-sm" :value="displayExportDir" readonly>
             <button class="px-3 py-2 bg-gray-100 rounded-lg border hover:bg-gray-200" @click="chooseDir">{{
               $t('common.select') }}</button>
-            <button class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700" @click="saveDir">{{
-              $t('common.save') }}</button>
+            <button class="px-3 py-2 bg-gray-100 rounded-lg border hover:bg-gray-200" @click="openExportDir">{{
+              $t('common.open') }}</button>
+            <button
+              class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="!canSaveDir" @click="saveDir">{{
+                $t('common.save') }}</button>
           </div>
           <p class="text-xs text-gray-500 mt-1">{{ $t('settings.autoExport.tip') }}</p>
         </div>
@@ -87,13 +91,13 @@ import { useI18n } from 'vue-i18n'
 import { useLanguageStore } from '@/stores/language'
 import { useAuthStore } from '@/stores/auth'
 import { useKeyStore } from '@/stores/key'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { relaunch } from '@tauri-apps/plugin-process'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { useSettingsStore } from '@/stores/settings'
 import { appDataDir } from '@tauri-apps/api/path'
-import { open } from '@tauri-apps/plugin-dialog'
+import { open as openDialog } from '@tauri-apps/plugin-dialog'
 
 const languageStore = useLanguageStore()
 const authStore = useAuthStore()
@@ -107,10 +111,19 @@ const showResetConfirm = ref(false)
 
 // 导出目录输入框展示值
 const displayExportDir = ref<string>('')
+const originalExportDir = ref<string>('')
+
+const canSaveDir = computed(() => {
+  return displayExportDir.value.trim() !== originalExportDir.value.trim()
+})
 
 const refreshDisplayDir = async () => {
   const dir = settingsStore.exportDirectory || await appDataDir()
   displayExportDir.value = dir
+  // 初始化原始值
+  if (!originalExportDir.value) {
+    originalExportDir.value = dir
+  }
 }
 
 const toggleAutoExport = (e: Event) => {
@@ -119,9 +132,18 @@ const toggleAutoExport = (e: Event) => {
 }
 
 const chooseDir = async () => {
-  const selected = await open({ directory: true, multiple: false }) as string | null
+  const selected = await openDialog({ directory: true, multiple: false }) as string | null
   if (selected) {
     displayExportDir.value = selected
+  }
+}
+
+const openExportDir = async () => {
+  const dir = displayExportDir.value || await settingsStore.getEffectiveExportDir()
+  try {
+    await invoke('open_directory', { dirPath: dir })
+  } catch (e) {
+    console.error('打开目录失败', e)
   }
 }
 
@@ -129,6 +151,8 @@ const saveDir = async () => {
   // Persist and ensure exists
   settingsStore.setAutoExportDir(displayExportDir.value)
   await settingsStore.getEffectiveExportDir()
+  // 保存后更新原始值，使按钮禁用
+  originalExportDir.value = displayExportDir.value
 }
 
 // 切换语言

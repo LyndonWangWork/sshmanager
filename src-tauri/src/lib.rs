@@ -42,6 +42,7 @@ pub fn run() {
             export_all_keys,
             reset_all_data,
             open_config_directory,
+            open_directory,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

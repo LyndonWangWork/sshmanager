@@ -21,7 +21,8 @@ const zh = {
     info: '信息',
     file: '文件',
     line: '行',
-    copy: '复制'
+    copy: '复制',
+    open: '打开'
   },
   nav: {
     dashboard: '仪表板',
@@ -401,7 +402,8 @@ const en = {
     info: 'Info',
     file: 'File',
     line: 'Line',
-    copy: 'Copy'
+    copy: 'Copy',
+    open: 'Open'
   },
   nav: {
     dashboard: 'Dashboard',
