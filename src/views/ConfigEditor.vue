@@ -38,9 +38,9 @@
           </div>
 
           <!-- 主机列表 -->
-          <div class="divide-y divide-gray-200">
+          <div class="divide-y ">
             <div v-for="(host, index) in sshConfig.hosts" :key="index" class="px-6 py-4 cursor-pointer hover:bg-gray-50"
-              :class="selectedHostIndex === index ? 'bg-blue-50 border-r-2 border-blue-500' : ''"
+              :class="selectedHostIndex === index ? 'bg-blue-50 border-r-2 border-r-blue-500' : ''"
               @click="selectHost(index)">
               <div class="flex items-center justify-between">
                 <div>
