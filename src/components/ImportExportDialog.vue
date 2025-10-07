@@ -19,7 +19,7 @@
           <!-- 导入方式选择 -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.import.method.title')
-            }}</label>
+              }}</label>
             <div class="space-y-2">
               <label class="flex items-center">
                 <input v-model="importMethod" type="radio" value="file" class="mr-3" />
@@ -35,7 +35,7 @@
           <!-- 文件选择 -->
           <div v-if="importMethod === 'file'">
             <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.import.file.label')
-            }}</label>
+              }}</label>
             <input ref="fileInput" type="file" accept=".json,.key,.pub,.pem,application/json,text/plain"
               @change="handleFileSelect"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -44,7 +44,7 @@
           <!-- 文本输入 -->
           <div v-if="importMethod === 'text'">
             <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.import.text.label')
-            }}</label>
+              }}</label>
             <textarea v-model="importText" rows="8" :placeholder="$t('importExport.import.text.placeholder')"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"></textarea>
           </div>
@@ -66,7 +66,7 @@
           <!-- 导出选项 -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.export.scope.title')
-            }}</label>
+              }}</label>
             <div class="space-y-2">
               <label class="flex items-center">
                 <input v-model="exportScope" type="radio" value="all" class="mr-3" />
@@ -95,7 +95,7 @@
           <!-- 导出格式 -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.export.format.title')
-            }}</label>
+              }}</label>
             <select v-model="exportFormat"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="json">{{ $t('importExport.export.format.json') }}</option>
@@ -597,23 +597,25 @@ const handleExport = async () => {
     const getFileExtension = (format: string) => {
       switch (format) {
         case 'json': return 'json'
-        case 'openssh': return 'txt'
+        case 'openssh': return null // OpenSSH 不使用 .txt 后缀
         case 'pem': return 'pem'
         default: return 'txt'
       }
     }
 
     const extension = getFileExtension(exportFormat.value)
-    const defaultFileName = `ssh_keys_${new Date().toISOString().split('T')[0]}.${extension}`
+    const baseFileName = `ssh_keys_${new Date().toISOString().split('T')[0]}`
+    const defaultFileName = extension ? `${baseFileName}.${extension}` : baseFileName
 
     // 使用 Tauri 文件保存对话框
-    const filePath = await save({
-      defaultPath: defaultFileName,
-      filters: [{
+    const saveOptions: any = { defaultPath: defaultFileName }
+    if (extension) {
+      saveOptions.filters = [{
         name: `${exportFormat.value.toUpperCase()} ${t('common.file')}`,
         extensions: [extension]
       }]
-    })
+    }
+    const filePath = await save(saveOptions)
 
     // 用户取消了保存
     if (!filePath) {
