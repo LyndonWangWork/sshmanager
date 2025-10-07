@@ -49,21 +49,24 @@
 
     <!-- 快速操作 -->
     <div class="card animate-slide-up" style="animation-delay: 0.4s">
-      <div class="card-body">
-        <h3 class="text-xl font-semibold text-tech-900 mb-6 flex items-center">
-          <div class="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-3"></div>
-          {{ $t('dashboard.quickActions.title') }}
+      <div class="card-body p-8">
+        <h3 class="text-2xl font-bold text-tech-900 mb-8 flex items-center">
+          <div class="w-2 h-8 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full mr-4 shadow-lg"></div>
+          <span class="text-gradient">{{ $t('dashboard.quickActions.title') }}</span>
         </h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <BaseButton @click="$router.push({ name: 'KeyGenerator' })" class="justify-center h-14" size="lg">
-            <PlusIcon class="w-5 h-5 mr-2" />
-            {{ $t('dashboard.quickActions.generateKey') }}
-          </BaseButton>
-          <BaseButton variant="secondary" @click="$router.push({ name: 'ConfigEditor' })" class="justify-center h-14"
-            size="lg">
-            <DocumentTextIcon class="w-5 h-5 mr-2" />
-            {{ $t('dashboard.quickActions.editConfig') }}
-          </BaseButton>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div class="group">
+            <BaseButton @click="$router.push({ name: 'KeyGenerator' })" quick-action :icon="PlusIcon"
+              class="w-full group-hover:shadow-2xl transition-all duration-300">
+              {{ $t('dashboard.quickActions.generateKey') }}
+            </BaseButton>
+          </div>
+          <div class="group">
+            <BaseButton variant="secondary" @click="$router.push({ name: 'ConfigEditor' })" quick-action
+              :icon="DocumentTextIcon" class="w-full group-hover:shadow-2xl transition-all duration-300">
+              {{ $t('dashboard.quickActions.editConfig') }}
+            </BaseButton>
+          </div>
         </div>
       </div>
     </div>
