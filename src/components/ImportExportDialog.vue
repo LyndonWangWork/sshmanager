@@ -19,7 +19,7 @@
           <!-- 导入方式选择 -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.import.method.title')
-              }}</label>
+            }}</label>
             <div class="space-y-2">
               <label class="flex items-center">
                 <input v-model="importMethod" type="radio" value="file" class="mr-3" />
@@ -35,7 +35,7 @@
           <!-- 文件选择 -->
           <div v-if="importMethod === 'file'">
             <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.import.file.label')
-              }}</label>
+            }}</label>
             <input ref="fileInput" type="file" accept=".json,.key,.pub,.pem,application/json,text/plain"
               @change="handleFileSelect"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -44,7 +44,7 @@
           <!-- 文本输入 -->
           <div v-if="importMethod === 'text'">
             <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.import.text.label')
-              }}</label>
+            }}</label>
             <textarea v-model="importText" rows="8" :placeholder="$t('importExport.import.text.placeholder')"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"></textarea>
           </div>
@@ -66,7 +66,7 @@
           <!-- 导出选项 -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.export.scope.title')
-              }}</label>
+            }}</label>
             <div class="space-y-2">
               <label class="flex items-center">
                 <input v-model="exportScope" type="radio" value="all" class="mr-3" />
@@ -80,10 +80,10 @@
             </div>
           </div>
 
-          <!-- 导出加密选项：使用主密码加密导出内容 -->
+          <!-- 导出加密选项：使用主密码加密导出内容（仅 JSON 可用） -->
           <div>
             <label class="flex items-center">
-              <input v-model="encryptWithMaster" type="checkbox" class="mr-3" />
+              <input v-model="encryptWithMaster" type="checkbox" class="mr-3" :disabled="exportFormat !== 'json'" />
               <span class="text-sm">{{ $t('importExport.export.security.encryptWithMaster') }}</span>
             </label>
             <div v-if="encryptWithMaster" class="mt-2">
@@ -95,7 +95,7 @@
           <!-- 导出格式 -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.export.format.title')
-              }}</label>
+            }}</label>
             <select v-model="exportFormat"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="json">{{ $t('importExport.export.format.json') }}</option>
@@ -530,6 +530,14 @@ watch(importMethod, (newMethod) => {
     if (fileInput.value) {
       fileInput.value.value = ''
     }
+  }
+})
+
+// 当导出格式切换为非 JSON（openssh 或 pem）时，自动关闭并禁用“使用主密码加密导出”
+watch(exportFormat, (newFormat) => {
+  if (newFormat !== 'json') {
+    encryptWithMaster.value = false
+    exportPassword.value = ''
   }
 })
 
