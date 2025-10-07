@@ -40,7 +40,8 @@ const zh = {
       sshConfig: 'SSH配置',
       status: '状态',
       loaded: '已加载',
-      normal: '正常'
+      normal: '正常',
+      hosts: '个主机'
     },
     quickActions: {
       title: '快速操作',
@@ -433,7 +434,8 @@ const en = {
       sshConfig: 'SSH Config',
       status: 'Status',
       loaded: 'Loaded',
-      normal: 'Normal'
+      normal: 'Normal',
+      hosts: ' hosts'
     },
     quickActions: {
       title: 'Quick Actions',

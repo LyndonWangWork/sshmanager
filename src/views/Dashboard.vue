@@ -9,8 +9,9 @@
     </div>
 
     <!-- 统计卡片 -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-      <div class="stat-card animate-slide-up" style="animation-delay: 0.1s">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+      <div class="stat-card animate-slide-up cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-200"
+        style="animation-delay: 0.1s" @click="goToKeyManager">
         <div class="flex items-center">
           <div class="p-4 rounded-2xl bg-gradient-to-br from-primary-100 to-primary-200 mr-4">
             <KeyIcon class="h-8 w-8 text-primary-600 icon-glow" aria-hidden="true" />
@@ -26,7 +27,8 @@
         </div>
       </div>
 
-      <div class="stat-card animate-slide-up" style="animation-delay: 0.2s">
+      <div class="stat-card animate-slide-up cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-200"
+        style="animation-delay: 0.2s" @click="goToConfigEditor">
         <div class="flex items-center">
           <div class="p-4 rounded-2xl bg-gradient-to-br from-success-100 to-success-200 mr-4">
             <CogIcon class="h-8 w-8 text-success-600 icon-glow" aria-hidden="true" />
@@ -36,27 +38,13 @@
               {{ $t('dashboard.stats.sshConfig') }}
             </dt>
             <dd class="text-3xl font-bold text-tech-900">
-              {{ $t('dashboard.stats.loaded') }}
+              {{ sshHostCount }}{{ $t('dashboard.stats.hosts') }}
             </dd>
           </div>
         </div>
       </div>
 
-      <div class="stat-card animate-slide-up" style="animation-delay: 0.3s">
-        <div class="flex items-center">
-          <div class="p-4 rounded-2xl bg-gradient-to-br from-accent-100 to-accent-200 mr-4">
-            <CheckCircleIcon class="h-8 w-8 text-accent-600 icon-glow" aria-hidden="true" />
-          </div>
-          <div class="flex-1">
-            <dt class="text-sm font-medium text-tech-600 mb-1">
-              {{ $t('dashboard.stats.status') }}
-            </dt>
-            <dd class="text-3xl font-bold text-tech-900">
-              {{ $t('dashboard.stats.normal') }}
-            </dd>
-          </div>
-        </div>
-      </div>
+
     </div>
 
     <!-- 快速操作 -->
@@ -83,26 +71,45 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
 import { useKeyStore } from '@/stores/key'
 import BaseButton from '@/components/BaseButton.vue'
+import { invoke } from '@tauri-apps/api/core'
+import type { SshConfig } from '@/types'
 import {
   KeyIcon,
   CogIcon,
-  CheckCircleIcon,
   PlusIcon,
   DocumentTextIcon,
 } from '@heroicons/vue/24/outline'
 
 const router = useRouter()
-const { t } = useI18n()
 const keyStore = useKeyStore()
+const sshHostCount = ref(0)
+
+// 跳转到密钥管理页面
+const goToKeyManager = () => {
+  router.push({ name: 'KeyManager' })
+}
+
+// 跳转到配置编辑页面
+const goToConfigEditor = () => {
+  router.push({ name: 'ConfigEditor' })
+}
 
 onMounted(async () => {
   try {
     await keyStore.loadKeys()
+
+    // 加载SSH配置获取主机数量
+    try {
+      const sshConfig = await invoke<SshConfig>('read_ssh_config', { filePath: undefined })
+      sshHostCount.value = sshConfig.hosts.length
+    } catch (sshError) {
+      console.error('加载SSH配置失败:', sshError)
+      sshHostCount.value = 0
+    }
   } catch (error) {
     console.error('加载密钥失败:', error)
   }
