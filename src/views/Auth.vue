@@ -100,7 +100,7 @@ const handleSubmit = async () => {
       <LanguageSelector variant="compact" />
     </div>
 
-    <div class="max-w-md w-full space-y-8 p-8 relative z-10">
+    <div class="max-w-lg w-full space-y-8 p-8 relative z-10">
       <!-- 头部区域 -->
       <div class="text-center animate-fade-in">
         <div
@@ -164,7 +164,7 @@ const handleSubmit = async () => {
             <BaseButton type="submit" :disabled="authStore.isLoading || (isSetupMode && password !== confirmPassword)"
               :loading="authStore.isLoading" class="w-full" size="lg">
               <span v-if="!authStore.isLoading">{{ isSetupMode ? $t('auth.setup.button') : $t('auth.login.button')
-              }}</span>
+                }}</span>
               <span v-else>{{ isSetupMode ? $t('auth.setup.initializing') : $t('auth.login.loggingIn') }}</span>
             </BaseButton>
           </form>
