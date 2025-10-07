@@ -93,7 +93,7 @@
             class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="created_at">{{ $t('keyManager.search.sortBy.createdAt') }}</option>
             <option value="name">{{ $t('keyManager.search.sortBy.name') }}</option>
-            <option value="last_used">{{ $t('keyManager.search.sortBy.lastUsed') }}</option>
+            <!-- <option value="last_used">{{ $t('keyManager.search.sortBy.lastUsed') }}</option> -->
           </select>
         </div>
       </div>
