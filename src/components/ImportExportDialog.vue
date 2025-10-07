@@ -84,7 +84,7 @@
           <div>
             <label class="flex items-center">
               <input v-model="encryptWithMaster" type="checkbox" class="mr-3" />
-              <span class="text-sm">使用主密码加密导出</span>
+              <span class="text-sm">{{ $t('importExport.export.security.encryptWithMaster') }}</span>
             </label>
             <div v-if="encryptWithMaster" class="mt-2">
               <BaseInput v-model="exportPassword" type="password" :label="$t('auth.masterPassword')"

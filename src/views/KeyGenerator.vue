@@ -307,26 +307,26 @@ const errors = reactive({
 })
 
 // 密钥类型配置
-const keyTypes = [
+const keyTypes = computed(() => [
   {
     value: 'Ed25519' as SshKeyType,
     name: 'Ed25519',
-    description: '现代的椭圆曲线算法，安全性高、性能优秀',
+    description: t('keyGenerator.keyType.descriptions.Ed25519'),
     recommended: true
   },
   {
     value: 'Rsa' as SshKeyType,
     name: 'RSA',
-    description: '传统的非对称加密算法，广泛支持但相对较慢',
+    description: t('keyGenerator.keyType.descriptions.Rsa'),
     recommended: false
   },
   {
     value: 'Ecdsa' as SshKeyType,
     name: 'ECDSA',
-    description: '椭圆曲线数字签名算法，平衡了安全性和性能',
+    description: t('keyGenerator.keyType.descriptions.Ecdsa'),
     recommended: false
   }
-]
+])
 
 // 可用的密钥长度
 const availableKeySizes = computed(() => {

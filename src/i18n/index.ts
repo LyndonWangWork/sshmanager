@@ -62,7 +62,12 @@ const zh = {
       selectType: '选择类型',
       recommended: '推荐',
       keyLength: '密钥长度 (bits)',
-      lengthHint: '更高的位数提供更强的安全性，但会增加计算开销'
+      lengthHint: '更高的位数提供更强的安全性，但会增加计算开销',
+      descriptions: {
+        Ed25519: '现代的椭圆曲线算法，安全性高、性能优秀',
+        Rsa: '传统的非对称加密算法，广泛支持但相对较慢',
+        Ecdsa: '椭圆曲线数字签名算法，平衡了安全性和性能'
+      }
     },
     advancedOptions: {
       title: '高级选项',
@@ -301,7 +306,8 @@ const zh = {
         description: 'JSON格式：适合应用备份和恢复 | OpenSSH/PEM格式：适合系统使用'
       },
       security: {
-        includePrivate: '包含私钥 (不推荐，仅在安全环境中使用)'
+        includePrivate: '包含私钥 (不推荐，仅在安全环境中使用)',
+        encryptWithMaster: '使用主密码加密导出'
       },
       preview: {
         title: '导出预览',
@@ -449,7 +455,12 @@ const en = {
       selectType: 'Select Type',
       recommended: 'Recommended',
       keyLength: 'Key Length (bits)',
-      lengthHint: 'Higher bits provide stronger security but increase computational overhead'
+      lengthHint: 'Higher bits provide stronger security but increase computational overhead',
+      descriptions: {
+        Ed25519: 'Modern elliptic curve algorithm with high security and excellent performance',
+        Rsa: 'Traditional asymmetric encryption algorithm with wide support but relatively slower',
+        Ecdsa: 'Elliptic curve digital signature algorithm that balances security and performance'
+      }
     },
     advancedOptions: {
       title: 'Advanced Options',
@@ -688,7 +699,8 @@ const en = {
         description: 'JSON Format: Suitable for app backup and restore | OpenSSH/PEM Format: Suitable for system use'
       },
       security: {
-        includePrivate: 'Include Private Keys (Not recommended, use only in secure environments)'
+        includePrivate: 'Include Private Keys (Not recommended, use only in secure environments)',
+        encryptWithMaster: 'Encrypt export with master password'
       },
       preview: {
         title: 'Export Preview',
