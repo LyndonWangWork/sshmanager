@@ -64,6 +64,25 @@ export const useKeyStore = defineStore('key', () => {
     }
   }
 
+  // 更新密钥信息
+  const updateKeyInfo = async (keyId: string, name: string, comment: string): Promise<boolean> => {
+    try {
+      const result = await invoke<boolean>('update_key_info', { keyId, name, comment })
+      if (result) {
+        // 更新本地状态
+        const keyIndex = keys.value.findIndex(key => key.id === keyId)
+        if (keyIndex !== -1) {
+          keys.value[keyIndex] = { ...keys.value[keyIndex], name, comment }
+        }
+        await maybeAutoExport()
+      }
+      return result
+    } catch (error) {
+      console.error('更新密钥信息失败:', error)
+      return false
+    }
+  }
+
   // 导出密钥
   const exportKey = async (keyId: string, exportPath?: string): Promise<boolean> => {
     try {
@@ -196,6 +215,7 @@ export const useKeyStore = defineStore('key', () => {
     loadKeys,
     generateKey,
     deleteKey,
+    updateKeyInfo,
     exportKey,
     importKeys,
     exportAllKeys,

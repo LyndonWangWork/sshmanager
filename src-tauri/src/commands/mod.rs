@@ -162,6 +162,32 @@ pub async fn delete_key(
     }
 }
 
+// 更新密钥信息
+#[tauri::command]
+pub async fn update_key_info(
+    key_id: String,
+    name: String,
+    comment: String,
+    crypto_state: CryptoState<'_>,
+    storage_state: StorageState<'_>,
+) -> Result<bool, String> {
+    let mut data = load_and_decrypt_data(&crypto_state, &storage_state).await?;
+
+    let keys = data["keys"].as_array_mut().ok_or("无效的数据格式")?;
+
+    // 查找并更新密钥
+    for key in keys.iter_mut() {
+        if key["id"].as_str().unwrap_or("") == key_id {
+            key["name"] = serde_json::Value::String(name);
+            key["comment"] = serde_json::Value::String(comment);
+            save_encrypted_data(data, &crypto_state, &storage_state).await?;
+            return Ok(true);
+        }
+    }
+
+    Ok(false)
+}
+
 // 导出密钥（实现版本）
 #[tauri::command]
 pub async fn export_key(

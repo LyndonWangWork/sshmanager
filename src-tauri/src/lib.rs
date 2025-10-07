@@ -30,6 +30,7 @@ pub fn run() {
             generate_ssh_key,
             get_all_keys,
             delete_key,
+            update_key_info,
             export_key,
             export_keys_to_file,
             export_all_keys_encrypted,

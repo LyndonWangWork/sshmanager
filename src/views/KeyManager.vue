@@ -170,7 +170,6 @@ import {
   PlusIcon,
   ArrowUpTrayIcon,
   ArrowDownTrayIcon,
-  ArrowLeftIcon,
   MagnifyingGlassIcon,
   ShieldCheckIcon,
   CpuChipIcon,
@@ -269,9 +268,28 @@ const handleEditKey = (keyData: SshKeyPair) => {
 
 // 保存密钥编辑
 const saveKeyEdit = async () => {
-  // TODO: 实现密钥信息更新功能
-  console.log('更新密钥信息:', editForm.value)
-  closeEditDialog()
+  if (!editingKey.value) {
+    console.error('没有正在编辑的密钥')
+    return
+  }
+
+  try {
+    const success = await keyStore.updateKeyInfo(
+      editingKey.value.id,
+      editForm.value.name,
+      editForm.value.comment
+    )
+
+    if (success) {
+      toastSuccess(`${t('keyManager.actions.edit')} ${t('common.success')}`)
+      closeEditDialog()
+    } else {
+      toastError(`${t('keyManager.actions.edit')} ${t('common.error')}`)
+    }
+  } catch (error) {
+    console.error('更新密钥信息失败:', error)
+    toastError(`${t('keyManager.actions.edit')} ${t('common.error')}`)
+  }
 }
 
 // 关闭编辑对话框
@@ -298,12 +316,6 @@ const handleExportKey = async (keyId: string) => {
     console.error('导出密钥失败:', error)
     toastError(`${t('keyManager.actions.export')} ${t('common.error')}`)
   }
-}
-
-// 导入密钥
-const importKeys = () => {
-  // TODO: 实现密钥导入功能
-  console.log('导入密钥功能待实现')
 }
 
 // 处理导入成功
