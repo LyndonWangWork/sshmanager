@@ -289,6 +289,7 @@ pub async fn export_keys_to_file(
         "json" => {
             let export_data = serde_json::json!({
                 "version": "1.0",
+                "is_encrypted": false,
                 "exported_at": chrono::Utc::now(),
                 "keys": keys_to_export.iter().map(|key| {
                     let mut key_data = serde_json::to_value(key).unwrap();
@@ -505,6 +506,7 @@ pub async fn export_all_keys_encrypted(
 
     let export_obj = serde_json::json!({
         "version": "1.1-encrypted",
+        "is_encrypted": true,
         "exported_at": chrono::Utc::now(),
         "kdf": {
             "type": "pbkdf2-hmac-sha256",
@@ -590,6 +592,7 @@ pub async fn export_selected_keys_encrypted(
 
     let export_obj = serde_json::json!({
         "version": "1.1-encrypted",
+        "is_encrypted": true,
         "exported_at": chrono::Utc::now(),
         "kdf": {
             "type": "pbkdf2-hmac-sha256",

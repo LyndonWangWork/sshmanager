@@ -19,7 +19,7 @@
           <!-- 导入方式选择 -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.import.method.title')
-              }}</label>
+            }}</label>
             <div class="space-y-2">
               <label class="flex items-center">
                 <input v-model="importMethod" type="radio" value="file" class="mr-3" />
@@ -35,7 +35,7 @@
           <!-- 文件选择 -->
           <div v-if="importMethod === 'file'">
             <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.import.file.label')
-              }}</label>
+            }}</label>
             <input ref="fileInput" type="file" accept=".json,.key,.pub,.pem,application/json,text/plain"
               @change="handleFileSelect"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -44,7 +44,7 @@
           <!-- 文本输入 -->
           <div v-if="importMethod === 'text'">
             <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.import.text.label')
-              }}</label>
+            }}</label>
             <textarea v-model="importText" rows="8" :placeholder="$t('importExport.import.text.placeholder')"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"></textarea>
           </div>
@@ -66,7 +66,7 @@
           <!-- 导出选项 -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.export.scope.title')
-              }}</label>
+            }}</label>
             <div class="space-y-2">
               <label class="flex items-center">
                 <input v-model="exportScope" type="radio" value="all" class="mr-3" />
@@ -95,7 +95,7 @@
           <!-- 导出格式 -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('importExport.export.format.title')
-              }}</label>
+            }}</label>
             <select v-model="exportFormat"
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="json">{{ $t('importExport.export.format.json') }}</option>
@@ -223,6 +223,7 @@ const exportPreview = computed(() => {
   if (exportFormat.value === 'json') {
     const data = {
       version: '1.0',
+      is_encrypted: false,
       exported_at: new Date().toISOString(),
       keys: keysToExport.map(key => ({
         ...key,
@@ -550,7 +551,7 @@ const handleImport = async () => {
         const raw = getRawContent()
         if (!raw.trim()) return false
         const v = JSON.parse(raw)
-        return v && typeof v === 'object' && v.version === '1.1-encrypted' && Array.isArray(v.keys) && v.salt
+        return v && typeof v === 'object' && v.is_encrypted === true && Array.isArray(v.keys) && v.salt
       } catch { return false }
     })()
 
