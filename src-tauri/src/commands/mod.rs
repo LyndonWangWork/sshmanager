@@ -1,6 +1,7 @@
 use crate::services::{CryptoService, SshConfigService, SshKeyService};
 use crate::storage::StorageService;
 use crate::types::{KeyGenerationParams, SshKeyPair};
+use base64::{engine::general_purpose, Engine as _};
 use std::process::Command;
 use std::sync::Mutex;
 use tauri::State;
@@ -483,8 +484,8 @@ pub async fn export_all_keys_encrypted(
             )
             .map_err(|e| e.to_string())?;
             serde_json::json!({
-                "nonce": priv_enc.nonce,
-                "ciphertext": priv_enc.ciphertext,
+                "nonce": general_purpose::STANDARD.encode(&priv_enc.nonce),
+                "ciphertext": general_purpose::STANDARD.encode(&priv_enc.ciphertext),
             })
         } else {
             serde_json::Value::Null
@@ -498,7 +499,10 @@ pub async fn export_all_keys_encrypted(
             "comment": k.comment,
             "fingerprint": k.fingerprint,
             "created_at": k.created_at,
-            "public_key_encrypted": { "nonce": pub_enc.nonce, "ciphertext": pub_enc.ciphertext },
+            "public_key_encrypted": {
+                "nonce": general_purpose::STANDARD.encode(&pub_enc.nonce),
+                "ciphertext": general_purpose::STANDARD.encode(&pub_enc.ciphertext)
+            },
             "private_key_encrypted": priv_enc_value,
         });
         enc_keys.push(item);
@@ -512,7 +516,7 @@ pub async fn export_all_keys_encrypted(
             "type": "pbkdf2-hmac-sha256",
             "iterations": 100_000,
         },
-        "salt": export_salt,
+        "salt": general_purpose::STANDARD.encode(&export_salt),
         "keys": enc_keys,
     });
 
@@ -569,8 +573,8 @@ pub async fn export_selected_keys_encrypted(
             )
             .map_err(|e| e.to_string())?;
             serde_json::json!({
-                "nonce": priv_enc.nonce,
-                "ciphertext": priv_enc.ciphertext,
+                "nonce": general_purpose::STANDARD.encode(&priv_enc.nonce),
+                "ciphertext": general_purpose::STANDARD.encode(&priv_enc.ciphertext),
             })
         } else {
             serde_json::Value::Null
@@ -584,7 +588,10 @@ pub async fn export_selected_keys_encrypted(
             "comment": k.comment,
             "fingerprint": k.fingerprint,
             "created_at": k.created_at,
-            "public_key_encrypted": { "nonce": pub_enc.nonce, "ciphertext": pub_enc.ciphertext },
+            "public_key_encrypted": {
+                "nonce": general_purpose::STANDARD.encode(&pub_enc.nonce),
+                "ciphertext": general_purpose::STANDARD.encode(&pub_enc.ciphertext)
+            },
             "private_key_encrypted": priv_enc_value,
         });
         enc_keys.push(item);
@@ -598,7 +605,7 @@ pub async fn export_selected_keys_encrypted(
             "type": "pbkdf2-hmac-sha256",
             "iterations": 100_000,
         },
-        "salt": export_salt,
+        "salt": general_purpose::STANDARD.encode(&export_salt),
         "keys": enc_keys,
     });
 
@@ -616,17 +623,33 @@ pub async fn import_encrypted_keys(
     let v: serde_json::Value =
         serde_json::from_str(&keys_data).map_err(|e| format!("解析密钥数据失败: {}", e))?;
 
-    let salt_vec = v
-        .get("salt")
-        .and_then(|s| s.as_array())
-        .ok_or("缺少salt或格式无效")?;
-    if salt_vec.len() != 32 {
-        return Err("salt长度无效".to_string());
-    }
-    let mut salt = [0u8; 32];
-    for (i, b) in salt_vec.iter().enumerate() {
-        salt[i] = b.as_u64().ok_or("salt字节无效")? as u8;
-    }
+    // 支持两种salt格式：base64字符串或字节数组
+    let salt = if let Some(salt_str) = v.get("salt").and_then(|s| s.as_str()) {
+        // 新格式：base64字符串
+        let salt_vec = general_purpose::STANDARD
+            .decode(salt_str)
+            .map_err(|e| format!("salt base64解码失败: {}", e))?;
+
+        if salt_vec.len() != 32 {
+            return Err("salt长度无效".to_string());
+        }
+
+        let mut salt = [0u8; 32];
+        salt.copy_from_slice(&salt_vec);
+        salt
+    } else if let Some(salt_vec) = v.get("salt").and_then(|s| s.as_array()) {
+        // 旧格式：字节数组
+        if salt_vec.len() != 32 {
+            return Err("salt长度无效".to_string());
+        }
+        let mut salt = [0u8; 32];
+        for (i, b) in salt_vec.iter().enumerate() {
+            salt[i] = b.as_u64().ok_or("salt字节无效")? as u8;
+        }
+        salt
+    } else {
+        return Err("缺少salt或格式无效".to_string());
+    };
 
     let items = v
         .get("keys")
@@ -683,23 +706,43 @@ pub async fn import_encrypted_keys(
         let pub_obj = item
             .get("public_key_encrypted")
             .ok_or("缺少public_key_encrypted")?;
-        let pub_nonce = pub_obj
-            .get("nonce")
-            .and_then(|a| a.as_array())
-            .ok_or("public_key_encrypted.nonce无效")?;
-        let pub_cipher = pub_obj
-            .get("ciphertext")
-            .and_then(|a| a.as_array())
-            .ok_or("public_key_encrypted.ciphertext无效")?;
 
-        let mut pub_nonce_bytes: Vec<u8> = Vec::with_capacity(pub_nonce.len());
-        for b in pub_nonce {
-            pub_nonce_bytes.push(b.as_u64().ok_or("nonce字节无效")? as u8);
-        }
-        let mut pub_cipher_bytes: Vec<u8> = Vec::with_capacity(pub_cipher.len());
-        for b in pub_cipher {
-            pub_cipher_bytes.push(b.as_u64().ok_or("ciphertext字节无效")? as u8);
-        }
+        // 支持两种nonce格式：base64字符串或字节数组
+        let pub_nonce_bytes = if let Some(nonce_str) = pub_obj.get("nonce").and_then(|a| a.as_str())
+        {
+            // 新格式：base64字符串
+            general_purpose::STANDARD
+                .decode(nonce_str)
+                .map_err(|e| format!("public nonce base64解码失败: {}", e))?
+        } else if let Some(nonce_array) = pub_obj.get("nonce").and_then(|a| a.as_array()) {
+            // 旧格式：字节数组
+            let mut nonce_bytes = Vec::with_capacity(nonce_array.len());
+            for b in nonce_array {
+                nonce_bytes.push(b.as_u64().ok_or("nonce字节无效")? as u8);
+            }
+            nonce_bytes
+        } else {
+            return Err("public_key_encrypted.nonce无效".to_string());
+        };
+
+        // 支持两种ciphertext格式：base64字符串或字节数组
+        let pub_cipher_bytes = if let Some(cipher_str) =
+            pub_obj.get("ciphertext").and_then(|a| a.as_str())
+        {
+            // 新格式：base64字符串
+            general_purpose::STANDARD
+                .decode(cipher_str)
+                .map_err(|e| format!("public ciphertext base64解码失败: {}", e))?
+        } else if let Some(cipher_array) = pub_obj.get("ciphertext").and_then(|a| a.as_array()) {
+            // 旧格式：字节数组
+            let mut cipher_bytes = Vec::with_capacity(cipher_array.len());
+            for b in cipher_array {
+                cipher_bytes.push(b.as_u64().ok_or("ciphertext字节无效")? as u8);
+            }
+            cipher_bytes
+        } else {
+            return Err("public_key_encrypted.ciphertext无效".to_string());
+        };
 
         let pub_enc = crate::services::EncryptedData {
             nonce: pub_nonce_bytes,
@@ -715,23 +758,44 @@ pub async fn import_encrypted_keys(
             if priv_obj.is_null() {
                 String::new()
             } else {
-                let priv_nonce = priv_obj
-                    .get("nonce")
-                    .and_then(|a| a.as_array())
-                    .ok_or("private_key_encrypted.nonce无效")?;
-                let priv_cipher = priv_obj
-                    .get("ciphertext")
-                    .and_then(|a| a.as_array())
-                    .ok_or("private_key_encrypted.ciphertext无效")?;
+                // 支持两种nonce格式：base64字符串或字节数组
+                let priv_nonce_bytes = if let Some(nonce_str) =
+                    priv_obj.get("nonce").and_then(|a| a.as_str())
+                {
+                    // 新格式：base64字符串
+                    general_purpose::STANDARD
+                        .decode(nonce_str)
+                        .map_err(|e| format!("private nonce base64解码失败: {}", e))?
+                } else if let Some(nonce_array) = priv_obj.get("nonce").and_then(|a| a.as_array()) {
+                    // 旧格式：字节数组
+                    let mut nonce_bytes = Vec::with_capacity(nonce_array.len());
+                    for b in nonce_array {
+                        nonce_bytes.push(b.as_u64().ok_or("nonce字节无效")? as u8);
+                    }
+                    nonce_bytes
+                } else {
+                    return Err("private_key_encrypted.nonce无效".to_string());
+                };
 
-                let mut priv_nonce_bytes: Vec<u8> = Vec::with_capacity(priv_nonce.len());
-                for b in priv_nonce {
-                    priv_nonce_bytes.push(b.as_u64().ok_or("nonce字节无效")? as u8);
-                }
-                let mut priv_cipher_bytes: Vec<u8> = Vec::with_capacity(priv_cipher.len());
-                for b in priv_cipher {
-                    priv_cipher_bytes.push(b.as_u64().ok_or("ciphertext字节无效")? as u8);
-                }
+                // 支持两种ciphertext格式：base64字符串或字节数组
+                let priv_cipher_bytes =
+                    if let Some(cipher_str) = priv_obj.get("ciphertext").and_then(|a| a.as_str()) {
+                        // 新格式：base64字符串
+                        general_purpose::STANDARD
+                            .decode(cipher_str)
+                            .map_err(|e| format!("private ciphertext base64解码失败: {}", e))?
+                    } else if let Some(cipher_array) =
+                        priv_obj.get("ciphertext").and_then(|a| a.as_array())
+                    {
+                        // 旧格式：字节数组
+                        let mut cipher_bytes = Vec::with_capacity(cipher_array.len());
+                        for b in cipher_array {
+                            cipher_bytes.push(b.as_u64().ok_or("ciphertext字节无效")? as u8);
+                        }
+                        cipher_bytes
+                    } else {
+                        return Err("private_key_encrypted.ciphertext无效".to_string());
+                    };
 
                 let priv_enc = crate::services::EncryptedData {
                     nonce: priv_nonce_bytes,
