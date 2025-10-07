@@ -9,9 +9,26 @@
           <KeyIcon class="h-6 w-6 text-primary-600 icon-glow" />
         </div>
         <div>
-          <h3 class="text-lg font-semibold text-tech-900 group-hover:text-primary-600 transition-colors duration-300">
-            {{ keyData.name }}
-          </h3>
+          <div class="flex items-center space-x-2">
+            <h3 class="text-lg font-semibold text-tech-900 group-hover:text-primary-600 transition-colors duration-300">
+              {{ keyData.name }}
+            </h3>
+            <!-- 私钥缺失警告图标 -->
+            <div v-if="!hasPrivateKey" class="relative group/tooltip">
+              <ExclamationTriangleIcon
+                class="h-5 w-5 text-warning-500 hover:text-warning-600 transition-colors cursor-help" />
+              <!-- Tooltip -->
+              <div
+                class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                <div class="font-semibold mb-1">{{ $t('keyCard.warnings.noPrivateKey.title') }}</div>
+                <div class="text-xs">{{ $t('keyCard.warnings.noPrivateKey.message') }}</div>
+                <!-- Tooltip arrow -->
+                <div
+                  class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900">
+                </div>
+              </div>
+            </div>
+          </div>
           <div class="flex items-center space-x-2 text-sm text-tech-500">
             <span
               class="px-3 py-1 bg-gradient-to-r from-primary-100 to-primary-200 text-primary-700 rounded-full text-xs font-semibold uppercase tracking-wide">
@@ -57,24 +74,6 @@
               {{ $t('keyCard.actions.deleteKey') }}
             </button>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 私钥缺失警告 -->
-    <div v-if="!hasPrivateKey"
-      class="mb-4 p-4 bg-gradient-to-r from-warning-50 to-warning-100 border border-warning-200 rounded-xl">
-      <div class="flex items-start space-x-3">
-        <div class="flex-shrink-0">
-          <ExclamationTriangleIcon class="h-5 w-5 text-warning-600" />
-        </div>
-        <div class="flex-1">
-          <h4 class="text-sm font-semibold text-warning-800 mb-1">
-            {{ $t('keyCard.warnings.noPrivateKey.title') }}
-          </h4>
-          <p class="text-sm text-warning-700">
-            {{ $t('keyCard.warnings.noPrivateKey.message') }}
-          </p>
         </div>
       </div>
     </div>
