@@ -203,5 +203,6 @@ export const useKeyStore = defineStore('key', () => {
     getKeyById,
     hasKey,
     clearKeys,
+    maybeAutoExport,
   }
 })

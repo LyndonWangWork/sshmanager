@@ -729,6 +729,8 @@ const onPasswordConfirm = async (password?: string) => {
     // 加密导入成功后刷新 Pinia 中的密钥列表，确保视图立即更新
     try {
       await keyStore.loadKeys()
+      // 触发自动导出功能
+      await keyStore.maybeAutoExport()
     } catch (e) {
       console.error('加密导入后刷新密钥列表失败:', e)
     }
