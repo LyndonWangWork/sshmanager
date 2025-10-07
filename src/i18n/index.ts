@@ -121,6 +121,12 @@ const zh = {
       nameRequired: '请输入密钥名称',
       passphraseLength: '密码长度不能少于8位',
       passphraseConfirm: '两次输入的密码不一致'
+    },
+    messages: {
+      copyPublicKeySuccess: '公钥已复制到剪贴板',
+      copyPublicKeyError: '复制公钥失败',
+      copyFingerprintSuccess: '指纹已复制到剪贴板',
+      copyFingerprintError: '复制指纹失败'
     }
   },
   keyManager: {
@@ -180,6 +186,12 @@ const zh = {
         title: '缺少私钥',
         message: '此密钥仅包含公钥信息，无法用于SSH认证登录'
       }
+    },
+    messages: {
+      copyPublicKeySuccess: '公钥已复制到剪贴板',
+      copyPublicKeyError: '复制公钥失败',
+      copyFingerprintSuccess: '指纹已复制到剪贴板',
+      copyFingerprintError: '复制指纹失败'
     },
     confirmDelete: '确定要删除密钥 "{name}" 吗？此操作无法撤销。'
   },
@@ -515,6 +527,12 @@ const en = {
       nameRequired: 'Please enter key name',
       passphraseLength: 'Passphrase must be at least 8 characters long',
       passphraseConfirm: 'Passphrases do not match'
+    },
+    messages: {
+      copyPublicKeySuccess: 'Public key copied to clipboard',
+      copyPublicKeyError: 'Failed to copy public key',
+      copyFingerprintSuccess: 'Fingerprint copied to clipboard',
+      copyFingerprintError: 'Failed to copy fingerprint'
     }
   },
   keyManager: {
@@ -574,6 +592,12 @@ const en = {
         title: 'Missing Private Key',
         message: 'This key only contains public key information and cannot be used for SSH authentication'
       }
+    },
+    messages: {
+      copyPublicKeySuccess: 'Public key copied to clipboard',
+      copyPublicKeyError: 'Failed to copy public key',
+      copyFingerprintSuccess: 'Fingerprint copied to clipboard',
+      copyFingerprintError: 'Failed to copy fingerprint'
     },
     confirmDelete: 'Are you sure you want to delete key "{name}"? This action cannot be undone.'
   },

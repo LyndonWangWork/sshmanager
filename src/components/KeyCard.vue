@@ -149,6 +149,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { SshKeyPair } from '@/types'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import { useToast } from '@/composables/useToast'
 import {
   KeyIcon,
   EllipsisVerticalIcon,
@@ -175,6 +176,7 @@ const emit = defineEmits<{
 }>()
 
 const { t: $t } = useI18n()
+const { success, error: showError } = useToast()
 const showMenu = ref(false)
 const showPublicKey = ref(false)
 const showDeleteConfirm = ref(false)
@@ -194,9 +196,10 @@ const copyPublicKey = async () => {
   try {
     await navigator.clipboard.writeText(props.keyData.public_key)
     showMenu.value = false
-    // TODO: 显示成功提示
-  } catch (error) {
-    console.error('复制失败:', error)
+    success($t('keyCard.messages.copyPublicKeySuccess'))
+  } catch (err) {
+    console.error('复制失败:', err)
+    showError($t('keyCard.messages.copyPublicKeyError'))
   }
 }
 
@@ -204,9 +207,10 @@ const copyPublicKey = async () => {
 const copyFingerprint = async () => {
   try {
     await navigator.clipboard.writeText(props.keyData.fingerprint)
-    // TODO: 显示成功提示
-  } catch (error) {
-    console.error('复制失败:', error)
+    success($t('keyCard.messages.copyFingerprintSuccess'))
+  } catch (err) {
+    console.error('复制失败:', err)
+    showError($t('keyCard.messages.copyFingerprintError'))
   }
 }
 

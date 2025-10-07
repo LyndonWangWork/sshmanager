@@ -54,7 +54,7 @@
           <!-- 密钥类型选择 -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-3">{{ $t('keyGenerator.keyType.selectType')
-            }}</label>
+              }}</label>
             <div class="space-y-2">
               <label v-for="type in keyTypes" :key="type.value"
                 class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
@@ -76,7 +76,7 @@
           <!-- 密钥长度 -->
           <div v-if="keyParams.key_type !== 'Ed25519'">
             <label class="block text-sm font-medium text-gray-700 mb-2">{{ $t('keyGenerator.keyType.keyLength')
-            }}</label>
+              }}</label>
             <select v-model="keyParams.key_size" required
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option v-for="size in availableKeySizes" :key="size" :value="size">
@@ -201,7 +201,7 @@
           <!-- 指纹 -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('keyGenerator.result.fingerprint')
-            }}</label>
+              }}</label>
             <div class="flex items-center space-x-2">
               <code class="flex-1 text-xs font-mono bg-gray-100 px-3 py-2 rounded border">
                     {{ generatedKey.fingerprint }}
@@ -216,7 +216,7 @@
           <!-- 公钥 -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">{{ $t('keyGenerator.result.publicKey')
-            }}</label>
+              }}</label>
             <textarea :value="generatedKey.public_key" readonly rows="3"
               class="w-full text-xs font-mono bg-gray-50 border border-gray-300 rounded-md p-3 resize-none"></textarea>
             <div class="flex space-x-2 mt-2">
@@ -262,6 +262,7 @@ import { ref, computed, reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useKeyStore } from '@/stores/key'
+import { useToast } from '@/composables/useToast'
 import type { KeyGenerationParams, SshKeyType, SshKeyPair } from '@/types'
 import BaseButton from '@/components/BaseButton.vue'
 import BaseInput from '@/components/BaseInput.vue'
@@ -276,6 +277,7 @@ import {
 
 const router = useRouter()
 const { t } = useI18n()
+const { success, error: showError } = useToast()
 const keyStore = useKeyStore()
 
 // 密钥生成参数
@@ -440,9 +442,10 @@ const copyPublicKey = async () => {
   if (generatedKey.value) {
     try {
       await navigator.clipboard.writeText(generatedKey.value.public_key)
-      // TODO: 显示成功提示
-    } catch (error) {
-      console.error('复制失败:', error)
+      success(t('keyGenerator.messages.copyPublicKeySuccess'))
+    } catch (err) {
+      console.error('复制失败:', err)
+      showError(t('keyGenerator.messages.copyPublicKeyError'))
     }
   }
 }
@@ -452,9 +455,10 @@ const copyFingerprint = async () => {
   if (generatedKey.value) {
     try {
       await navigator.clipboard.writeText(generatedKey.value.fingerprint)
-      // TODO: 显示成功提示
-    } catch (error) {
-      console.error('复制失败:', error)
+      success(t('keyGenerator.messages.copyFingerprintSuccess'))
+    } catch (err) {
+      console.error('复制失败:', err)
+      showError(t('keyGenerator.messages.copyFingerprintError'))
     }
   }
 }
