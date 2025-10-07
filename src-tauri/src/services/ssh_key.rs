@@ -66,6 +66,9 @@ impl SshKeyService {
                     384 => EcdsaKeypair::random(&mut rng, EcdsaCurve::NistP384).map_err(|e| {
                         AppError::KeyGenerationError(format!("ECDSA P-384密钥生成失败: {}", e))
                     })?,
+                    521 => EcdsaKeypair::random(&mut rng, EcdsaCurve::NistP521).map_err(|e| {
+                        AppError::KeyGenerationError(format!("ECDSA P-521密钥生成失败: {}", e))
+                    })?,
                     _ => {
                         return Err(AppError::KeyGenerationError(
                             "不支持的ECDSA密钥长度".to_string(),

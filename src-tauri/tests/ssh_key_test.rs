@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use ssh_key_manager_lib::services::SshKeyService;
-    use ssh_key_manager_lib::types::{SshKeyType, KeyGenerationParams};
+    use ssh_key_manager_lib::types::{KeyGenerationParams, SshKeyType};
 
     #[test]
     fn test_ssh_key_service_new() {
@@ -75,6 +75,26 @@ mod tests {
     }
 
     #[test]
+    fn test_generate_ecdsa_p521_key() {
+        let params = KeyGenerationParams {
+            name: "Test ECDSA P-521 Key".to_string(),
+            key_type: SshKeyType::Ecdsa,
+            key_size: 521,
+            comment: "test521@example.com".to_string(),
+            passphrase: None,
+        };
+
+        let result = SshKeyService::generate_key_pair(params);
+        assert!(result.is_ok());
+
+        let key_pair = result.unwrap();
+        assert_eq!(key_pair.name, "Test ECDSA P-521 Key");
+        assert_eq!(key_pair.key_type, SshKeyType::Ecdsa);
+        assert_eq!(key_pair.key_size, 521);
+        assert!(key_pair.public_key.starts_with("ecdsa-sha2-nistp521"));
+    }
+
+    #[test]
     fn test_generate_key_with_passphrase() {
         let params = KeyGenerationParams {
             name: "Test Protected Key".to_string(),
@@ -131,13 +151,15 @@ mod tests {
         };
 
         let key_pair = SshKeyService::generate_key_pair(params).unwrap();
-        
+
         // Fingerprint should start with SHA256:
         assert!(key_pair.fingerprint.starts_with("SHA256:"));
         // Should be followed by base64 characters
         let fingerprint_part = &key_pair.fingerprint[7..]; // Remove "SHA256:" prefix
         assert!(fingerprint_part.len() > 0);
-        assert!(fingerprint_part.chars().all(|c| c.is_alphanumeric() || c == '+' || c == '/' || c == '='));
+        assert!(fingerprint_part
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == '+' || c == '/' || c == '='));
     }
 
     #[test]
