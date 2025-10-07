@@ -169,6 +169,12 @@ const zh = {
       showPublicKey: '显示公钥',
       hidePublicKey: '收起公钥'
     },
+    warnings: {
+      noPrivateKey: {
+        title: '缺少私钥',
+        message: '此密钥仅包含公钥信息，无法用于SSH认证登录'
+      }
+    },
     confirmDelete: '确定要删除密钥 "{name}" 吗？此操作无法撤销。'
   },
   configEditor: {
@@ -549,6 +555,12 @@ const en = {
       publicKeyContent: 'Public Key Content',
       showPublicKey: 'Show Public Key',
       hidePublicKey: 'Hide Public Key'
+    },
+    warnings: {
+      noPrivateKey: {
+        title: 'Missing Private Key',
+        message: 'This key only contains public key information and cannot be used for SSH authentication'
+      }
     },
     confirmDelete: 'Are you sure you want to delete key "{name}"? This action cannot be undone.'
   },

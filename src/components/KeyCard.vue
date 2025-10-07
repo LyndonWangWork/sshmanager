@@ -61,6 +61,24 @@
       </div>
     </div>
 
+    <!-- 私钥缺失警告 -->
+    <div v-if="!hasPrivateKey"
+      class="mb-4 p-4 bg-gradient-to-r from-warning-50 to-warning-100 border border-warning-200 rounded-xl">
+      <div class="flex items-start space-x-3">
+        <div class="flex-shrink-0">
+          <ExclamationTriangleIcon class="h-5 w-5 text-warning-600" />
+        </div>
+        <div class="flex-1">
+          <h4 class="text-sm font-semibold text-warning-800 mb-1">
+            {{ $t('keyCard.warnings.noPrivateKey.title') }}
+          </h4>
+          <p class="text-sm text-warning-700">
+            {{ $t('keyCard.warnings.noPrivateKey.message') }}
+          </p>
+        </div>
+      </div>
+    </div>
+
     <!-- 密钥详细信息 -->
     <div class="space-y-4">
       <div>
@@ -128,7 +146,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { SshKeyPair } from '@/types'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
@@ -139,6 +157,7 @@ import {
   ArrowDownTrayIcon,
   PencilIcon,
   TrashIcon,
+  ExclamationTriangleIcon,
 } from '@heroicons/vue/24/outline'
 
 interface Props {
@@ -156,10 +175,15 @@ const emit = defineEmits<{
   export: [keyId: string]
 }>()
 
-const { t } = useI18n()
+const { t: $t } = useI18n()
 const showMenu = ref(false)
 const showPublicKey = ref(false)
 const showDeleteConfirm = ref(false)
+
+// 计算属性：判断是否有私钥
+const hasPrivateKey = computed(() => {
+  return props.keyData.private_key && props.keyData.private_key.trim() !== ''
+})
 
 // 格式化日期
 const formatDate = (dateString: string) => {
