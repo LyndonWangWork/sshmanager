@@ -74,10 +74,9 @@
     <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <!-- 搜索框 -->
-        <div class="relative flex-1 max-w-md">
-          <MagnifyingGlassIcon class="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-          <input v-model="searchQuery" type="text" :placeholder="$t('keyManager.search.placeholder')"
-            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <div class="flex-1 max-w-md">
+          <BaseInput v-model="searchQuery" :placeholder="$t('keyManager.search.placeholder')"
+            :prefix-icon="MagnifyingGlassIcon" :show-clear-button="true" size="md" />
         </div>
 
         <!-- 过滤器 -->
