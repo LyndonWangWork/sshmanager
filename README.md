@@ -2,6 +2,8 @@
 
 English | [中文说明](./README_cn.md)
 
+> This project was completely written by AI. I didn't write a single line of code -__-
+
 ### Overview
 SSH Key Manager is a cross‑platform desktop application built with Tauri 2 and Vue 3 for generating and managing SSH keys, and editing OpenSSH configuration with a form + raw editor workflow.
 
